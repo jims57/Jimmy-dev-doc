@@ -518,6 +518,6 @@ private float[] byteArrayToFloatArray(byte[] bytes, int length) {
 ---
 
 **版本**: wq-aec3-1.0.aar  
-**更新时间**: 2025-01-31  
+**更新时间**: 2025-08-21  
 **支持的Android版本**: API 21+  
 **推荐测试设备**: 中高端Android设备以获得最佳性能
