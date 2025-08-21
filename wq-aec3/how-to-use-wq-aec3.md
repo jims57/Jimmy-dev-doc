@@ -1,14 +1,14 @@
-# WebRTC AEC3 Android集成指南
+# wq-aec3-1.0.aar Android集成指南
 
 ## 概述
 
-`webrtc-aec3-tts-1.0.aar` 是一个基于Google WebRTC AEC3算法的Android音频回声消除库，专为TTS（文本转语音）场景优化，支持实时回声消除和语音识别集成。
+`wq-aec3-1.0.aar` 是一个基于NLMS(归一化最小均方)算法的Android音频回声消除库，专为TTS（文本转语音）场景优化，提供高性能的实时回声消除功能。
 
 ## 1. 项目依赖配置
 
 ### 1.1 添加AAR文件
 
-将 `webrtc-aec3-tts-1.0.aar` 文件放置到项目的 `app/libs/` 目录下。
+将 `wq-aec3-1.0.aar` 文件放置到项目的 `app/libs/` 目录下。
 
 ### 1.2 配置build.gradle
 
@@ -16,11 +16,7 @@
 
 ```gradle
 dependencies {
-    implementation files('libs/webrtc-aec3-tts-1.0.aar')
-    
-    // 必需的依赖
-    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
-    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation files('libs/wq-aec3-1.0.aar')
 }
 ```
 
@@ -35,17 +31,9 @@ dependencies {
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
-<!-- ASR语音识别权限 -->
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
 <!-- Android 11+ 存储权限 -->
 <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
     android:minSdkVersion="30" />
-
-<!-- WebRTC AEC3优化权限 -->
-<uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" 
-    android:protectionLevel="signature|privileged" />
 ```
 
 ## 3. 音频参数配置
@@ -74,7 +62,7 @@ private int currentStreamDelay = AEC3_STREAM_DELAY;
 ### 4.1 导入必要的类
 
 ```java
-import com.tts.aec3.WebRtcAec3;
+import cn.watchfun.aec3.WqAecProcessor;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.AudioFormat;
@@ -87,7 +75,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 ```java
 // AEC3处理器实例
-private WebRtcAec3 aec3Processor = null;
+private WqAecProcessor aec3Processor = null;
 
 // 音频组件
 private AudioTrack audioTrack;
@@ -115,7 +103,7 @@ private void initializeAEC3Processor() {
         }
         
         // 创建新的AEC3处理器
-        aec3Processor = new WebRtcAec3();
+        aec3Processor = new WqAecProcessor();
         boolean initResult = aec3Processor.initialize();
         
         if (initResult) {
@@ -143,7 +131,7 @@ private void initializeAEC3Processor() {
 
 ```java
 private void configureErleParameters() {
-    // 基于adjust-ERLE-result.md的优化参数
+    // 基于官方优化参数的配置
     aec3Processor.setFilterLengthBlocks(25);
     aec3Processor.setFilterLeakageConverged(0.000005f);
     aec3Processor.setFilterLeakageDiverged(0.005f);
@@ -310,7 +298,7 @@ private void processAudioWithAEC(byte[] buffer, int bytesRead) {
             cleanAudioFrames.add(cleanFrame);
             
             // 获取性能指标
-            WebRtcAec3.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
+            WqAecProcessor.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
             if (metrics != null) {
                 float erle = (float) metrics.echoReturnLossEnhancement;
                 int delay = metrics.delayMs;
@@ -329,7 +317,7 @@ private void processAudioWithAEC(byte[] buffer, int bytesRead) {
 
 ```java
 private void monitorERLEPerformance() {
-    WebRtcAec3.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
+    WqAecProcessor.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
     if (metrics != null) {
         float erle = (float) metrics.echoReturnLossEnhancement;
         int delay = metrics.delayMs;
@@ -360,7 +348,7 @@ private void autoOptimizeDelay() {
     if (aec3Processor != null) {
         boolean result = aec3Processor.autoOptimizeDelay();
         if (result) {
-            WebRtcAec3.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
+            WqAecProcessor.EnhancedAecMetrics metrics = aec3Processor.getEnhancedMetrics();
             if (metrics != null) {
                 currentStreamDelay = metrics.optimalDelayMs;
                 Log.i(TAG, "自动优化完成，最优延迟: " + currentStreamDelay + "ms");
@@ -370,39 +358,55 @@ private void autoOptimizeDelay() {
 }
 ```
 
-## 9. 清洁音频保存
+## 9. 清洁音频获取
 
-### 9.1 WAV文件保存
+### 9.1 从处理器缓冲区获取清洁音频
 
 ```java
-private void saveCleanAudioToWAV() {
-    if (cleanAudioFrames.isEmpty()) return;
-    
+private void getCleanAudioFromProcessor() {
+    if (aec3Processor != null) {
+        try {
+            // 获取WAV格式清洁音频（44.1kHz）
+            byte[] cleanWavData = aec3Processor.getCleanAudioAsWAV(44100);
+            if (cleanWavData != null && cleanWavData.length > 0) {
+                saveCleanAudioToFile(cleanWavData, "wav");
+            }
+            
+            // 获取PCM格式清洁音频（16kHz）
+            byte[] cleanPcmData = aec3Processor.getCleanAudioAsPCM(16000);
+            if (cleanPcmData != null && cleanPcmData.length > 0) {
+                saveCleanAudioToFile(cleanPcmData, "pcm");
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "获取清洁音频失败", e);
+        }
+    }
+}
+```
+
+### 9.2 清洁音频文件保存
+
+```java
+private void saveCleanAudioToFile(byte[] audioData, String format) {
     try {
-        // 创建文件名
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
         String timestamp = sdf.format(new Date());
-        String filename = "clean_audio_" + timestamp + ".wav";
+        String filename = "clean_audio_" + timestamp + "." + format;
         
-        // 保存到Documents目录
         File documentsDir = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOCUMENTS);
-        File wavFile = new File(documentsDir, filename);
+        if (!documentsDir.exists()) {
+            documentsDir.mkdirs();
+        }
+        File audioFile = new File(documentsDir, filename);
         
-        // 合并所有帧
-        int totalSamples = cleanAudioFrames.size() * AEC3_FRAME_SIZE;
-        float[] allSamples = new float[totalSamples];
-        int offset = 0;
-        
-        for (float[] frame : cleanAudioFrames) {
-            System.arraycopy(frame, 0, allSamples, offset, frame.length);
-            offset += frame.length;
+        try (FileOutputStream fos = new FileOutputStream(audioFile)) {
+            fos.write(audioData);
+            fos.flush();
         }
         
-        // 写入WAV文件
-        writeWAVFile(wavFile, allSamples, SAMPLE_RATE);
-        
-        Log.i(TAG, "清洁音频已保存: " + wavFile.getAbsolutePath());
+        Log.i(TAG, "清洁音频已保存: " + audioFile.getAbsolutePath());
         
     } catch (Exception e) {
         Log.e(TAG, "保存清洁音频失败", e);
@@ -423,10 +427,8 @@ private void stopRecordingAndCleanup() {
     // 清理缓冲区
     ttsFrameBuffer.clear();
     
-    // 保存清洁音频
-    if (!cleanAudioFrames.isEmpty()) {
-        saveCleanAudioToWAV();
-    }
+    // 获取清洁音频
+    getCleanAudioFromProcessor();
     
     // 释放资源
     if (audioRecord != null) {
@@ -439,6 +441,11 @@ private void stopRecordingAndCleanup() {
         audioTrack.stop();
         audioTrack.release();
         audioTrack = null;
+    }
+    
+    // 清理处理器缓冲区
+    if (aec3Processor != null) {
+        aec3Processor.clearCleanAudioBuffer();
     }
 }
 ```
@@ -485,52 +492,6 @@ private float[] byteArrayToFloatArray(byte[] bytes, int length) {
 }
 ```
 
-### 11.2 WAV文件写入
-
-```java
-private void writeWAVFile(File file, float[] audioData, int sampleRate) throws IOException {
-    FileOutputStream out = new FileOutputStream(file);
-    
-    int dataSize = audioData.length * 2;
-    int fileSize = 36 + dataSize;
-    
-    // WAV文件头
-    out.write("RIFF".getBytes());
-    writeInt(out, fileSize);
-    out.write("WAVE".getBytes());
-    out.write("fmt ".getBytes());
-    writeInt(out, 16); // PCM格式大小
-    writeShort(out, (short) 1); // PCM格式
-    writeShort(out, (short) 1); // 单声道
-    writeInt(out, sampleRate);
-    writeInt(out, sampleRate * 2); // 字节率
-    writeShort(out, (short) 2); // 块对齐
-    writeShort(out, (short) 16); // 每样本位数
-    out.write("data".getBytes());
-    writeInt(out, dataSize);
-    
-    // 写入音频数据
-    for (float sample : audioData) {
-        short pcmSample = (short) (sample * Short.MAX_VALUE);
-        writeShort(out, pcmSample);
-    }
-    
-    out.close();
-}
-
-private void writeInt(FileOutputStream out, int value) throws IOException {
-    out.write(value & 0xFF);
-    out.write((value >> 8) & 0xFF);
-    out.write((value >> 16) & 0xFF);
-    out.write((value >> 24) & 0xFF);
-}
-
-private void writeShort(FileOutputStream out, short value) throws IOException {
-    out.write(value & 0xFF);
-    out.write((value >> 8) & 0xFF);
-}
-```
-
 ## 12. 注意事项
 
 ### 12.1 必须遵循的要求
@@ -554,17 +515,9 @@ private void writeShort(FileOutputStream out, short value) throws IOException {
 3. **初始化失败**: 检查权限、音频设备占用情况
 4. **设备兼容性**: 尝试不同的AudioSource类型
 
-## 13. 完整示例
-
-参考 `MainActivity.java` 获取完整的实现示例，包含：
-- UI交互控制
-- 实时性能监控
-- ASR语音识别集成
-- 错误处理和恢复机制
-
 ---
 
-**版本**: webrtc-aec3-tts-1.0.aar  
+**版本**: wq-aec3-1.0.aar  
 **更新时间**: 2025-01-31  
 **支持的Android版本**: API 21+  
 **推荐测试设备**: 中高端Android设备以获得最佳性能
