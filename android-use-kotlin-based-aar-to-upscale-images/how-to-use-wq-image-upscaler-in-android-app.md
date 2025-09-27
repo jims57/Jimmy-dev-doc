@@ -1,5 +1,6 @@
 # 如何在Android应用中使用wq-image-upscaler AAR库
 
+*作者：Jimmy Gan*
 *最后更新：2024年9月27日*
 
 本指南将详细介绍如何从零开始在Android项目中集成和使用wq-image-upscaler AAR库，该库基于Real-ESRGAN AI模型提供强大的图像超分辨率功能。
