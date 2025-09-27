@@ -1,4 +1,4 @@
-# 如何在Android应用中使用wq-image-upscaler AAR库
+# 如何在Android应用中使用wq-image-upscaler-1.0.0.aar库
 
 *作者：Jimmy Gan*
 
@@ -587,4 +587,4 @@ private void batchUpscaleImages(List<String> imagePaths) {
 - `ImageUpscaler`：库的主要日志
 - `TensorFlowLite`：TensorFlow Lite相关日志
 
-通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler AAR库，为用户提供强大的AI图像超分辨率功能。
+通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler-1.0.0.aar库，为用户提供强大的AI图像超分辨率功能。
