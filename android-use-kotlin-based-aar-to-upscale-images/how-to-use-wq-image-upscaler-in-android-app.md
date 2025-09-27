@@ -4,7 +4,7 @@
 
 *最后更新：2025年9月27日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用wq-image-upscaler AAR库，该库基于Real-ESRGAN AI模型提供强大的图像超分辨率功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用沃奇图片超分辨率增强AAR库（wq-image-upscaler-1.0.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像超分辨率功能。
 
 ## 目录
 
