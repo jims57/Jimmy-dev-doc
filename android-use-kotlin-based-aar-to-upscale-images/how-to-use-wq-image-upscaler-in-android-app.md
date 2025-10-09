@@ -70,20 +70,20 @@ cp wq-image-upscaler-1.0.0.aar /path/to/your/android/project/app/libs/
 
 ```kotlin
 dependencies {
-    // AAR库依赖
+    // 只需添加AAR库依赖，所有TensorFlow Lite依赖已自动包含
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
-    
-    // 必需的TensorFlow Lite依赖
-    implementation("org.tensorflow:tensorflow-lite:2.14.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
-    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
-    
-    // Kotlin协程支持（如果使用Kotlin）
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     
     // 其他现有依赖...
 }
 ```
+
+**✨ 重要提示：** wq-image-upscaler-1.0.0.aar已经内置了所有必需的依赖，包括：
+- `org.tensorflow:tensorflow-lite:2.14.0`
+- `org.tensorflow:tensorflow-lite-support:0.4.4`
+- `org.tensorflow:tensorflow-lite-metadata:0.4.4`
+- `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3`
+
+**无需手动添加这些依赖！**
 
 ### 第3步：同步项目
 
