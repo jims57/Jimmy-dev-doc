@@ -2,7 +2,7 @@
 
 > 作者：Jimmy Gan  
 > 日期：2025-10-27  
-> 版本：v2.0.0
+> 版本：v1.0.0
 
 ## 目录
 
@@ -31,7 +31,6 @@ WQMp3StreamPlayer 是一个轻量级高性能的 Android AAR 库，专注于播�
 - ✅ **状态监听**：完善的回调机制，实时获取播放状态
 - ✅ **资源高效**：自动管理音频缓冲和播放资源
 - ✅ **线程安全**：内部处理了线程切换
-- ✅ **零配置依赖**：Media3依赖已内置，开箱即用
 
 ### 1.3 架构设计
 
@@ -84,16 +83,50 @@ websocket.send(audio_bytes)
 
 #### 步骤 1：添加 AAR 依赖
 
+**方式一：使用 Maven 本地仓库（推荐）- Media3依赖自动包含**
+
+1. 将整个 `libs-maven` 文件夹复制到项目的 `app/` 目录
+2. 在项目根目录的 `settings.gradle.kts` 中添加：
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("${rootProject.projectDir.absolutePath}/app/libs-maven")
+        }
+    }
+}
+```
+
+3. 在 `app/build.gradle.kts` 中添加：
+
+```kotlin
+dependencies {
+    // WQMp3StreamPlayer - Media3依赖会自动包含
+    implementation("cn.watchfun:wqmp3streamplayer:1.0.0")
+    
+    // 如果使用WebSocket，需要添加OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+}
+```
+
+**方式二：使用 AAR 文件 - 需要手动添加Media3依赖**
+
 将 `wqmp3streamplayer-release.aar` 文件复制到项目的 `app/libs/` 目录，然后在 `app/build.gradle` 中添加：
 
 ```gradle
 dependencies {
     implementation files('libs/wqmp3streamplayer-release.aar')
     
+    // 必需的Media3依赖
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-datasource:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    
     // 如果使用WebSocket，需要添加OkHttp
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    
-    // Note: Media3依赖已自动包含在AAR中，无需手动添加
 }
 ```
 
@@ -165,7 +198,69 @@ player.release();
 
 ### 3.1 添加 AAR 到项目
 
-#### 方式一：使用 libs 文件夹（推荐）
+#### 方式一：使用 Maven 本地仓库（推荐）
+
+**优点**：Media3依赖自动包含，无需手动添加
+
+```
+YourProject/
+├── app/
+│   ├── libs-maven/  ← 复制整个文件夹到这里
+│   │   └── cn/
+│   │       └── watchfun/
+│   │           └── wqmp3streamplayer/
+│   │               ├── 1.0.0/
+│   │               └── maven-metadata.xml
+│   ├── build.gradle.kts
+│   └── src/
+├── settings.gradle.kts  ← 在这里配置
+```
+
+在项目根目录的 `settings.gradle.kts` 中：
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("${rootProject.projectDir.absolutePath}/app/libs-maven")
+        }
+    }
+}
+```
+
+在 `app/build.gradle.kts` 中：
+
+```kotlin
+android {
+    compileSdk = 34
+    
+    defaultConfig {
+        minSdk = 24
+        targetSdk = 34
+    }
+    
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    // WQMp3StreamPlayer - Media3依赖自动包含
+    implementation("cn.watchfun:wqmp3streamplayer:1.0.0")
+    
+    // OkHttp - WebSocket 通信（如需要）
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+}
+```
+
+#### 方式二：使用 AAR 文件
+
+**优点**：简单直接  
+**缺点**：需要手动添加Media3依赖
 
 ```
 YourProject/
@@ -197,16 +292,15 @@ dependencies {
     // AAR 库
     implementation files('libs/wqmp3streamplayer-release.aar')
     
+    // Media3 库 - 必需依赖（手动添加）
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-datasource:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    
     // OkHttp - WebSocket 通信（应用层使用，如需要）
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    
-    // Note: Media3依赖已作为传递依赖自动包含在AAR中，无需手动添加
 }
 ```
-
-#### 方式二：作为 Library Module
-
-如果你想将源代码作为模块集成，参考构建说明文档。
 
 ### 3.2 同步项目
 
@@ -950,38 +1044,6 @@ D/WQMp3StreamPlayer: 状态更新: PLAYING
 1. **及时释放**：不使用时立即调用 `release()`
 2. **复用实例**：避免频繁创建销毁播放器
 3. **控制缓冲**：如果网速慢，考虑预缓冲
-
----
-
-## 附录
-
-### A. 版本历史
-
-| 版本 | 日期 | 更新内容 |
-|------|------|----------|
-| v2.1.0 | 2025-10-28 | Media3依赖作为传递依赖自动包含，简化集成 |
-| v2.0.0 | 2025-10-27 | 重构架构，移除WebSocket，专注播放 |
-| v1.0.0 | 2025-10-27 | 首次发布（已废弃） |
-
-### B. 架构对比
-
-#### v1.0.0 架构（已废弃）
-```
-APP → AAR (包含WebSocket + ExoPlayer)
-```
-❌ 不够灵活，耦合度高
-
-#### v2.0.0 架构（当前版本）
-```
-APP (WebSocket) → AAR (ExoPlayer)
-```
-✅ 职责清晰，灵活通用
-
-### C. 相关资源
-
-- **OkHttp 官方文档**：https://square.github.io/okhttp/
-- **Android Media3 指南**：https://developer.android.com/guide/topics/media/media3
-- **Android 音频开发指南**：https://developer.android.com/guide/topics/media
 
 ---
 
