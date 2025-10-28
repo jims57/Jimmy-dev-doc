@@ -142,32 +142,44 @@ dependencies {
 #### 步骤 3：使用播放器
 
 ```java
+import java.util.concurrent.atomic.AtomicBoolean;
+import cn.watchfun.mp3streamplayer.WQMp3StreamPlayer;
+import cn.watchfun.mp3streamplayer.PlayerCallback;
+import cn.watchfun.mp3streamplayer.PlayerState;
+import cn.watchfun.mp3streamplayer.StreamConfig;
+
 // 1. 创建播放器
 WQMp3StreamPlayer player = new WQMp3StreamPlayer(context);
+final AtomicBoolean isPlaying = new AtomicBoolean(false);
 
 // 2. 设置回调
 player.setCallback(new PlayerCallback() {
     @Override
     public void onStateChanged(PlayerState state) {
         // 处理状态变化
+        if (state == PlayerState.STOPPED || state == PlayerState.ENDED || state == PlayerState.ERROR) {
+            isPlaying.set(false);
+        }
     }
     
     @Override
     public void onError(String errorMessage, Throwable throwable) {
-        // 处理错误
+        Log.e(TAG, "播放错误: " + errorMessage, throwable);
+        isPlaying.set(false);
     }
     
     @Override
     public void onPlaybackCompleted() {
-        // 播放完成
+        Log.d(TAG, "播放完成");
+        isPlaying.set(false);
     }
 });
 
 // 3. 初始化播放器
 // 如果数据有12字节头部，配置头部信息
 StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(123456L)
-        .setMessageId(789)
+        .setStartTimeId(System.currentTimeMillis())
+        .setMessageId(1)
         .build();
 player.initialize(config);
 
@@ -176,20 +188,37 @@ player.initialize(config);
 
 // 4. 启动播放器
 player.start();
+isPlaying.set(true);
 
 // 5. 在接收到WebSocket数据时，喂给播放器
-webSocket.setListener(new WebSocketListener() {
+webSocket = okHttpClient.newWebSocket(request, new WebSocketListener() {
     @Override
-    public void onMessage(WebSocket ws, ByteString bytes) {
-        player.feedData(bytes.toByteArray());
+    public void onMessage(WebSocket webSocket, ByteString bytes) {
+        if (player != null) {
+            player.feedData(bytes.toByteArray());
+        }
+    }
+    
+    @Override
+    public void onClosed(WebSocket webSocket, int code, String reason) {
+        // 通知播放器数据传输完成
+        if (player != null) {
+            player.notifyDataComplete();
+        }
     }
 });
 
 // 6. 停止播放
-player.stop();
+if (player != null) {
+    player.stop();
+}
+isPlaying.set(false);
 
-// 7. 释放资源
-player.release();
+// 7. 释放资源（在onDestroy中）
+if (player != null) {
+    player.release();
+    player = null;
+}
 ```
 
 ---
@@ -968,6 +997,7 @@ mainHandler.post(() -> {
     player.feedData(audioData);
 });
 ```
+
 
 ### 7.3 错误处理
 
