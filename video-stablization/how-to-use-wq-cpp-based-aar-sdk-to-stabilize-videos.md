@@ -1,10 +1,10 @@
-# 如何在Android应用中使用wqvideostabilizer-1.2.1.aar库
+# 如何在Android应用中使用wqvideostabilizer-1.2.2.aar库
 
 *作者：Jimmy Gan*
 
 *最后更新：2025年11月4日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.1.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.2.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
 
 ## 目录
 
@@ -41,7 +41,7 @@ wqvideostabilizer是一个专为Android开发的视频稳定AAR库，具有以�
 ### 方式一：从构建输出获取
 ```bash
 # AAR库文件位置
-/Users/mac/Documents/GitHub/video-stabilization-by-opencv/my-info/build_aar_for_android/android-output/wqvideostabilizer-1.2.1.aar
+/Users/mac/Documents/GitHub/video-stabilization-by-opencv/my-info/build_aar_for_android/android-output/wqvideostabilizer-1.2.2.aar
 ```
 
 ### 方式二：自行构建
@@ -61,7 +61,7 @@ cd /Users/mac/Documents/GitHub/android_use_cpp/my-info/build_android_aar
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wqvideostabilizer-1.2.1.aar /path/to/your/android/project/app/libs/
+cp wqvideostabilizer-1.2.2.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -958,6 +958,11 @@ public class VideoInfo {
 ---
 
 **版本历史:**
+
+- **v1.2.2** (2025-11-04)
+  - 自动清理旧版本AAR文件
+  - 自动隐藏播放器控件，让对比视频更加容易
+  - 发布时，自动更新版本信息到文档
 
 - **v1.2.1** (2025-11-04)
   - 所有进度消息本地化为中文
