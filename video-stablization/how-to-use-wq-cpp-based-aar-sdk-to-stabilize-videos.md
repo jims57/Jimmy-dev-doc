@@ -1,10 +1,10 @@
-# 如何在Android应用中使用wqvideostabilizer-1.2.0.aar库
+# 如何在Android应用中使用wqvideostabilizer-1.2.1.aar库
 
 *作者：Jimmy Gan*
 
 *最后更新：2025年11月4日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.0.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.1.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
 
 ## 目录
 
@@ -41,7 +41,7 @@ wqvideostabilizer是一个专为Android开发的视频稳定AAR库，具有以�
 ### 方式一：从构建输出获取
 ```bash
 # AAR库文件位置
-/Users/mac/Documents/GitHub/video-stabilization-by-opencv/my-info/build_aar_for_android/android-output/wqvideostabilizer-1.2.0.aar
+/Users/mac/Documents/GitHub/video-stabilization-by-opencv/my-info/build_aar_for_android/android-output/wqvideostabilizer-1.2.1.aar
 ```
 
 ### 方式二：自行构建
@@ -61,7 +61,7 @@ cd /Users/mac/Documents/GitHub/android_use_cpp/my-info/build_android_aar
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wqvideostabilizer-1.2.0.aar /path/to/your/android/project/app/libs/
+cp wqvideostabilizer-1.2.1.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -640,107 +640,275 @@ btnCancel.setOnClickListener(v -> {
 
 ### WQVideoStabilizer类
 
+完整的公共方法列表，包含详细的中文注释说明：
+
 #### 构造函数
 ```java
+/**
+ * 构造函数
+ * 创建视频稳定器实例
+ */
 public WQVideoStabilizer()
 ```
-创建视频稳定器实例。
 
-#### 方法
+#### 核心方法
 
-##### setProgressCallback
+##### 1. setProgressCallback - 设置进度回调
 ```java
+/**
+ * 设置进度回调以接收状态更新
+ * 
+ * @param callback 进度回调接口，用于接收视频处理的实时进度信息
+ *                 包括当前阶段、处理帧数、百分比和状态消息
+ */
 public void setProgressCallback(ProgressCallback callback)
 ```
-设置进度回调以接收状态更新。
 
-**参数:**
-- `callback`: 进度回调接口
-
-##### getVideoInfo
+**使用示例:**
 ```java
+videoStabilizer.setProgressCallback(new ProgressCallback() {
+    @Override
+    public void onProgress(int stage, int currentFrame, int totalFrames, 
+                          float percentage, String message) {
+        // 更新UI显示进度
+        runOnUiThread(() -> {
+            progressBar.setProgress((int) percentage);
+            statusText.setText(message);
+        });
+    }
+});
+```
+
+##### 2. getVideoInfo - 获取视频信息
+```java
+/**
+ * 获取视频信息（帧数、时长、尺寸、帧率）
+ * 
+ * @param videoPath 输入视频文件的完整路径
+ * @return 包含视频元数据的VideoInfo对象
+ *         包括总帧数、时长(毫秒)、宽度、高度、帧率和有效性标志
+ */
 public VideoInfo getVideoInfo(String videoPath)
 ```
-获取视频信息（帧数、时长、尺寸、帧率）。
 
-**参数:**
-- `videoPath`: 输入视频文件路径
-
-**返回:** 包含视频元数据的VideoInfo对象
-
-##### convertToMp4
+**使用示例:**
 ```java
+VideoInfo info = videoStabilizer.getVideoInfo("/sdcard/video.mp4");
+if (info.valid) {
+    Log.d("Video", String.format("尺寸: %dx%d, 帧率: %.1f fps, 总帧数: %d",
+        info.width, info.height, info.fps, info.totalFrames));
+}
+```
+
+##### 3. convertToMp4 - 转换为MP4格式
+```java
+/**
+ * 将视频转换为MP4格式（如果尚未是MP4）
+ * 注意：此方法会自动检查输入文件扩展名（不区分大小写）
+ * 如果输入已经是MP4格式，将直接复制文件而不进行重新编码
+ * 
+ * @param inputPath 输入视频文件路径，支持AVI、MOV、MKV等格式
+ * @param outputPath 输出MP4文件路径
+ * @return 成功返回true，失败返回false
+ *         失败时可通过getLastError()获取详细错误信息
+ */
 public boolean convertToMp4(String inputPath, String outputPath)
 ```
-将视频转换为MP4格式（如果尚未是MP4）。
 
-**参数:**
-- `inputPath`: 输入视频文件路径
-- `outputPath`: 输出MP4文件路径
-
-**返回:** 成功返回true，否则返回false
-
-##### stabilizeVideo (预设模式)
+**使用示例:**
 ```java
+boolean success = videoStabilizer.convertToMp4(
+    "/sdcard/video.avi",
+    "/sdcard/video.mp4"
+);
+if (!success) {
+    String error = videoStabilizer.getLastError();
+    Log.e("Convert", "转换失败: " + error);
+}
+```
+
+**特性:**
+- 自动检测MP4格式（不区分大小写：.mp4、.MP4、.Mp4等）
+- 已是MP4则直接复制，避免不必要的重新编码
+- 支持进度回调，显示转换进度百分比
+- 使用H.264视频编码和AAC音频编码
+
+##### 4. stabilizeVideo - 稳定视频（预设模式）
+```java
+/**
+ * 使用FFmpeg vidstab滤镜稳定视频
+ * 这是推荐的稳定方法，使用预设的优化参数
+ * 
+ * @param inputPath 输入视频文件路径，必须是有效的视频文件
+ * @param outputPath 输出稳定后视频文件路径，将保存为MP4格式
+ * @param mode 稳定模式，可选值：
+ *             - StabilizationMode.LIGHT: 轻度稳定（快速，适合轻微抖动）
+ *             - StabilizationMode.MODERATE: 中度稳定（平衡，推荐使用）
+ *             - StabilizationMode.AGGRESSIVE: 激进稳定（最强效果，处理时间长）
+ * @return 成功返回true，失败返回false
+ *         处理过程中会通过ProgressCallback报告进度
+ */
 public boolean stabilizeVideo(String inputPath, String outputPath, StabilizationMode mode)
 ```
-使用FFmpeg vidstab滤镜稳定视频。
 
-**参数:**
-- `inputPath`: 输入视频文件路径
-- `outputPath`: 输出稳定后视频文件路径
-- `mode`: 稳定模式 (LIGHT, MODERATE, AGGRESSIVE)
-
-**返回:** 成功返回true，否则返回false
-
-##### stabilizeVideo (自定义参数)
+**使用示例:**
 ```java
+// 使用中度模式稳定视频
+boolean success = videoStabilizer.stabilizeVideo(
+    "/sdcard/shaky.mp4",
+    "/sdcard/stabilized.mp4",
+    StabilizationMode.MODERATE
+);
+```
+
+**模式说明:**
+- **LIGHT**: shakiness=3, accuracy=8, smoothing=20, stepsize=6
+  - 内存使用: ~80-120MB
+  - 处理速度: 快
+  - 适用场景: 手持拍摄，轻微抖动
+
+- **MODERATE**: shakiness=4, accuracy=8, smoothing=25, stepsize=6
+  - 内存使用: ~150-200MB
+  - 处理速度: 中等
+  - 适用场景: 边走边拍，一般抖动（推荐）
+
+- **AGGRESSIVE**: shakiness=10, accuracy=15, smoothing=50, stepsize=4
+  - 内存使用: ~200-250MB
+  - 处理速度: 慢
+  - 适用场景: 跑步拍摄，严重抖动
+
+**注意事项:**
+- AAR会在处理前自动调用System.gc()释放内存
+- 建议在后台线程中执行，避免阻塞UI
+- 处理大视频文件时建议使用LIGHT模式
+
+##### 5. stabilizeVideo - 稳定视频（自定义参数）
+```java
+/**
+ * 使用自定义参数稳定视频
+ * 适合高级用户，需要精确控制稳定效果
+ * 
+ * @param inputPath 输入视频文件路径
+ * @param outputPath 输出稳定后视频文件路径
+ * @param shakiness 抖动程度参数 (1-10)
+ *                  值越高表示视频抖动越严重，算法会更激进地稳定
+ *                  推荐值: 轻度=3, 中度=4-5, 激进=10
+ * @param accuracy 准确度参数 (1-15)
+ *                 值越高表示运动检测越精确，但处理时间和内存使用也越多
+ *                 推荐值: 轻度=8, 中度=8-10, 激进=15
+ * @param smoothing 平滑度参数 (0-100)
+ *                  值越高表示相机运动越平滑，但可能损失部分画面细节
+ *                  推荐值: 轻度=20, 中度=25-30, 激进=50
+ * @return 成功返回true，失败返回false
+ */
 public boolean stabilizeVideo(String inputPath, String outputPath, 
                              int shakiness, int accuracy, int smoothing)
 ```
-使用自定义参数稳定视频。
 
-**参数:**
-- `inputPath`: 输入视频文件路径
-- `outputPath`: 输出稳定后视频文件路径
-- `shakiness`: 抖动程度参数 (1-10，越高越激进)
-- `accuracy`: 准确度参数 (1-15，越高越准确)
-- `smoothing`: 平滑度参数 (0-100，越高越平滑)
-
-**返回:** 成功返回true，否则返回false
-
-##### createComparisonVideo
+**使用示例:**
 ```java
+// 自定义参数：中等抖动，高精度，中等平滑
+boolean success = videoStabilizer.stabilizeVideo(
+    "/sdcard/video.mp4",
+    "/sdcard/stabilized.mp4",
+    5,   // shakiness
+    12,  // accuracy
+    30   // smoothing
+);
+```
+
+##### 6. createComparisonVideo - 创建对比视频
+```java
+/**
+ * 创建对比视频（原始和稳定后并排显示）
+ * 生成左右分屏对比视频，方便查看稳定效果
+ * 
+ * @param originalPath 原始视频文件路径
+ * @param stabilizedPath 稳定后视频文件路径
+ * @param outputPath 输出对比视频文件路径，将保存为MKV格式
+ * @return 成功返回true，失败返回false
+ *         支持进度回调，显示创建进度百分比
+ */
 public boolean createComparisonVideo(String originalPath, String stabilizedPath, String outputPath)
 ```
-创建对比视频（原始和稳定后并排）。
 
-**参数:**
-- `originalPath`: 原始视频文件路径
-- `stabilizedPath`: 稳定后视频文件路径
-- `outputPath`: 输出对比视频文件路径
-
-**返回:** 成功返回true，否则返回false
-
-##### cancel
+**使用示例:**
 ```java
+boolean success = videoStabilizer.createComparisonVideo(
+    "/sdcard/original.mp4",
+    "/sdcard/stabilized.mp4",
+    "/sdcard/comparison.mkv"
+);
+```
+
+**输出格式:**
+- 左侧: 原始视频（缩放到一半宽度）
+- 右侧: 稳定后视频（缩放到一半宽度）
+- 编码: H.264, CRF 18（高质量）
+- 容器: MKV格式
+
+##### 7. cancel - 取消操作
+```java
+/**
+ * 取消当前正在进行的操作
+ * 可以在另一个线程中调用此方法来中断视频处理
+ * 注意：取消操作可能需要几秒钟才能完全停止
+ */
 public void cancel()
 ```
-取消当前操作。
 
-##### getLastError
+**使用示例:**
 ```java
+// 在取消按钮的点击事件中
+btnCancel.setOnClickListener(v -> {
+    videoStabilizer.cancel();
+    Toast.makeText(this, "正在取消...", Toast.LENGTH_SHORT).show();
+});
+```
+
+##### 8. getLastError - 获取错误信息
+```java
+/**
+ * 获取最后一次操作的错误消息
+ * 当方法返回false时，可调用此方法获取详细的错误信息
+ * 
+ * @return 错误消息字符串，如果没有错误则返回空字符串
+ *         错误消息为中文，便于调试和向用户展示
+ */
 public String getLastError()
 ```
-获取最后的错误消息。
 
-**返回:** 错误消息字符串
-
-##### destroy
+**使用示例:**
 ```java
+boolean success = videoStabilizer.stabilizeVideo(input, output, mode);
+if (!success) {
+    String error = videoStabilizer.getLastError();
+    Log.e("VideoStabilizer", "处理失败: " + error);
+    Toast.makeText(this, "错误: " + error, Toast.LENGTH_LONG).show();
+}
+```
+
+##### 9. destroy - 释放资源
+```java
+/**
+ * 释放资源
+ * 当不再使用稳定器时调用此方法，释放内部资源
+ * 建议在Activity的onDestroy()方法中调用
+ */
 public void destroy()
 ```
-释放资源。当不再使用稳定器时调用此方法。
+
+**使用示例:**
+```java
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    if (videoStabilizer != null) {
+        videoStabilizer.destroy();
+        videoStabilizer = null;
+    }
+}
+```
 
 ### ProgressCallback接口
 
@@ -790,6 +958,14 @@ public class VideoInfo {
 ---
 
 **版本历史:**
+
+- **v1.2.1** (2025-11-04)
+  - 所有进度消息本地化为中文
+  - 为所有步骤添加百分比进度显示（MP4转换、抖动分析、稳定处理、对比视频创建）
+  - 优化中度模式内存使用，防止OOM崩溃
+  - AAR内部自动进行内存管理（System.gc()）
+  - 智能MP4检测（不区分大小写）
+  - 完整的公共方法中文注释文档
 
 - **v1.2.0** (2025-11-04)
   - 添加详细的帧级进度反馈
