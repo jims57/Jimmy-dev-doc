@@ -4,7 +4,7 @@
 
 *最后更新：2025年11月4日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.0.aar），该库基于FFmpeg和vidstab技术提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.0.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
 
 ## 目录
 
@@ -22,7 +22,7 @@
 
 wqvideostabilizer是一个专为Android开发的视频稳定AAR库，具有以下特点：
 
-- **FFmpeg + vidstab**：基于专业的FFmpeg视频处理和vidstab稳定算法
+- **FFmpeg + OpenCV**：基于FFmpeg视频处理和OpenCV计算机视觉技术（如LK光流算法、GFTT特征检测、PFM算法等）
 - **三种稳定模式**：轻度、中度、激进三种模式适应不同场景
 - **实时进度反馈**：帧级别的处理进度回调
 - **自包含设计**：包含所有依赖，无需额外配置
