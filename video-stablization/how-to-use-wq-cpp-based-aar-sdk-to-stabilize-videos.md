@@ -77,7 +77,7 @@ dependencies {
 }
 ```
 
-**重要提示：** AAR已包含所有必需的依赖（FFmpeg、vidstab、smart-exception），无需额外添加。
+**重要提示：** AAR已包含所有必需的依赖（FFmpeg、smart-exception），无需额外添加。
 
 ### 第3步：同步项目
 
@@ -514,7 +514,7 @@ private void checkPermissions() {
 ### Q6: AAR包含哪些依赖？
 
 **A:** AAR是自包含的，包括：
-- FFmpeg库（带vidstab支持）
+- FFmpeg库
 - smart-exception-common
 - smart-exception-java
 - 所有必需的native库
@@ -736,7 +736,7 @@ if (!success) {
 ##### 4. stabilizeVideo - 稳定视频（预设模式）
 ```java
 /**
- * 使用FFmpeg vidstab滤镜稳定视频
+ * 使用滤镜稳定视频
  * 这是推荐的稳定方法，使用预设的优化参数
  * 
  * @param inputPath 输入视频文件路径，必须是有效的视频文件
