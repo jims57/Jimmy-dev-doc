@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             
-            Log.i("VideoStabilizer", "✅ 视频稳定器初始化成功");
+            Log.i("VideoStabilizer", "视频稳定器初始化成功");
             
         } catch (Exception e) {
             Log.e("VideoStabilizer", "初始化失败", e);
@@ -292,13 +292,13 @@ public class VideoStabilizerActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     
                     if (success) {
-                        tvStatus.setText("✅ 稳定完成");
-                        appendLog("✅ 视频已保存到: " + outputPath);
+                        tvStatus.setText("稳定完成");
+                        appendLog("视频已保存到: " + outputPath);
                         Toast.makeText(this, "稳定成功！", Toast.LENGTH_LONG).show();
                     } else {
-                        tvStatus.setText("❌ 稳定失败");
+                        tvStatus.setText(" 稳定失败");
                         String error = videoStabilizer.getLastError();
-                        appendLog("❌ 错误: " + error);
+                        appendLog(" 错误: " + error);
                         Toast.makeText(this, "失败: " + error, Toast.LENGTH_LONG).show();
                     }
                 });
@@ -308,8 +308,8 @@ public class VideoStabilizerActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     btnStabilize.setEnabled(true);
                     progressBar.setVisibility(View.GONE);
-                    tvStatus.setText("❌ 出错");
-                    appendLog("❌ 异常: " + e.getMessage());
+                    tvStatus.setText(" 出错");
+                    appendLog(" 异常: " + e.getMessage());
                 });
             }
         });
@@ -452,12 +452,12 @@ videoStabilizer.setProgressCallback(new ProgressCallback() {
 **A:** 视频稳定是CPU密集型操作，可能需要几分钟时间。在主线程执行会导致ANR（应用无响应）。
 
 ```java
-// ✅ 正确 - 使用后台线程
+// 正确 - 使用后台线程
 executorService.execute(() -> {
     videoStabilizer.stabilizeVideo(input, output, mode);
 });
 
-// ❌ 错误 - 在主线程执行
+//  错误 - 在主线程执行
 videoStabilizer.stabilizeVideo(input, output, mode);  // 会导致ANR
 ```
 
@@ -475,6 +475,8 @@ videoStabilizer.stabilizeVideo(input, output, mode);  // 会导致ANR
 1. 确保设备有足够可用内存（至少2GB）
 2. 关闭其他应用释放内存
 3. 考虑先压缩视频分辨率
+4. 建议使用轻度模式处理大视频文件
+5. 处理前调用 `System.gc()` 释放内存
 
 ### Q4: 支持哪些视频格式？
 
@@ -785,8 +787,6 @@ public class VideoInfo {
 
 - **作者**: Jimmy Gan
 - **邮箱**: jimmy@watchfun.cn
-- **项目地址**: https://github.com/watchfun/video-stabilization
-
 ---
 
 **版本历史:**
