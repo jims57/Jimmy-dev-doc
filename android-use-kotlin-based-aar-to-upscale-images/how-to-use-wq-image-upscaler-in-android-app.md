@@ -4,7 +4,7 @@
 
 *最后更新：2025年11月11日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片超分辨率增强AAR库（wq-image-upscaler-1.0.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像超分辨率功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-upscaler-1.0.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像降噪功能。
 
 ## 目录
 
@@ -20,10 +20,10 @@
 
 ## 库简介
 
-wq-image-upscaler是一个专为Android开发的图像超分辨率AAR库，具有以下特点：
+wq-image-upscaler是一个专为Android开发的图像降噪AAR库，具有以下特点：
 
 - **AI驱动**：基于Real-ESRGAN深度学习模型
-- **4倍放大**：支持图像4倍超分辨率增强
+- **4倍放大**：支持图像4倍降噪增强
 - **硬件加速**：自动NNAPI硬件加速，智能CPU回退
 - **内存优化**：自动瓦片处理，防止大图像内存溢出
 - **Java友好**：提供阻塞方法，简化Java集成
@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     
-    // 图像超分辨率处理
+    // 图像降噪处理
     private void upscaleImage(String imagePath) {
         executorService.execute(() -> {
             // 使用阻塞方法处理图像 - 无需协程！
@@ -230,7 +230,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // 图像超分辨率处理
+    // 图像降噪处理
     private fun upscaleImage(imagePath: String) {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -273,7 +273,7 @@ class MainActivity : AppCompatActivity() {
 ### 1. 不同的处理模式
 
 ```java
-// 标准4倍超分辨率（不缩小，不恢复尺寸）
+// 标准4倍降噪（不缩小，不恢复尺寸）
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
     imagePath, false, 0.0f, false
 );
@@ -611,4 +611,4 @@ private void batchUpscaleImages(List<String> imagePaths) {
 - `ImageUpscaler`：库的主要日志
 - `TensorFlowLite`：TensorFlow Lite相关日志
 
-通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler-1.0.0.aar库，为用户提供强大的AI图像超分辨率功能。
+通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler-1.0.0.aar库，为用户提供强大的AI图像降噪功能。
