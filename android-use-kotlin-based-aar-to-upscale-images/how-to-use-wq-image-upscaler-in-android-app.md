@@ -302,7 +302,7 @@ ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
 
 ### 2. 硬件加速（自动处理）
 
-**✨ 重要更新：** AAR现在自动处理硬件加速，无需手动指定代理类型！
+** 重要更新：** AAR现在自动处理硬件加速，无需手动指定代理类型！
 
 ```java
 // AAR内部自动处理：
