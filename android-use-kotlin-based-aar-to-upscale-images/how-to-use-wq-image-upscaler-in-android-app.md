@@ -1,10 +1,10 @@
-# 如何在Android应用中使用wq-image-upscaler-1.0.0.aar库
+# 如何在Android应用中使用wq-image-upscaler-1.3.0.aar库
 
 *作者：Jimmy Gan*
 
 *最后更新：2025年11月11日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-upscaler-1.0.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像降噪功能。
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-upscaler-1.3.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像降噪功能。
 
 ## 目录
 
@@ -42,7 +42,7 @@ wq-image-upscaler是一个专为Android开发的图像降噪AAR库，具有以�
 ### 方式一：从构建输出获取
 ```bash
 # AAR库文件位置
-/path/to/android-use-litert/my-info/android_aar/aar-output/wq-image-upscaler-1.0.0.aar
+/path/to/android-use-litert/my-info/android_aar/aar-output/wq-image-upscaler-1.3.0.aar
 ```
 
 ### 方式二：自行构建
@@ -62,7 +62,7 @@ cd /path/to/android-use-litert/my-info/android_aar
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wq-image-upscaler-1.0.0.aar /path/to/your/android/project/app/libs/
+cp wq-image-upscaler-1.3.0.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -78,7 +78,7 @@ dependencies {
 }
 ```
 
-**重要提示：** wq-image-upscaler-1.0.0.aar已经内置了所有必需的依赖，包括：
+**重要提示：** wq-image-upscaler-1.3.0.aar已经内置了所有必需的依赖，包括：
 - `org.tensorflow:tensorflow-lite:2.14.0`
 - `org.tensorflow:tensorflow-lite-support:0.4.4`
 - `org.tensorflow:tensorflow-lite-metadata:0.4.4`
@@ -611,4 +611,4 @@ private void batchUpscaleImages(List<String> imagePaths) {
 - `ImageUpscaler`：库的主要日志
 - `TensorFlowLite`：TensorFlow Lite相关日志
 
-通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler-1.0.0.aar库，为用户提供强大的AI图像降噪功能。
+通过遵循本指南，您应该能够成功在Android应用中集成和使用wq-image-upscaler-1.3.0.aar库，为用户提供强大的AI图像降噪功能。
