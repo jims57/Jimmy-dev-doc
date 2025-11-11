@@ -2,7 +2,7 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年9月27日*
+*最后更新：2025年11月11日*
 
 本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片超分辨率增强AAR库（wq-image-upscaler-1.0.0.aar），该库基于Real-ESRGAN AI模型提供强大的图像超分辨率功能。
 
@@ -24,10 +24,11 @@ wq-image-upscaler是一个专为Android开发的图像超分辨率AAR库，具�
 
 - **AI驱动**：基于Real-ESRGAN深度学习模型
 - **4倍放大**：支持图像4倍超分辨率增强
-- **硬件加速**：支持NNAPI硬件加速
+- **硬件加速**：自动NNAPI硬件加速，智能CPU回退
 - **内存优化**：自动瓦片处理，防止大图像内存溢出
 - **Java友好**：提供阻塞方法，简化Java集成
 - **中文支持**：完整的中文API文档和错误信息
+- **智能回退**：自动检测设备兼容性，NNAPI失败时自动切换CPU
 
 ## 系统要求
 
@@ -115,7 +116,7 @@ dependencies {
 ### Java实现（推荐 - 使用阻塞方法）
 
 ```java
-import com.imageupscale.ImageUpscaler;
+import watchfun.image.ImageUpscaler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -150,12 +151,12 @@ public class MainActivity extends AppCompatActivity {
     private void upscaleImage(String imagePath) {
         executorService.execute(() -> {
             // 使用阻塞方法处理图像 - 无需协程！
+            // AAR会自动处理硬件加速（NNAPI -> CPU回退）
             ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
                 imagePath,                    // 图像路径
                 true,                        // 是否保存处理结果
-                false,                       // 是否先调整到512px
-                true,                        // 是否在处理后恢复尺寸
-                ImageUpscaler.Delegate.NNAPI // 使用硬件加速
+                0.75f,                       // 缩小参数（0.75表示缩小75%，保留25%）
+                true                         // 是否在处理后恢复到原始尺寸
             );
             
             // 在主线程更新UI
@@ -201,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
 ### Kotlin实现（使用协程）
 
 ```kotlin
-import com.imageupscale.ImageUpscaler
+import watchfun.image.ImageUpscaler
 import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
@@ -236,7 +237,7 @@ class MainActivity : AppCompatActivity() {
                 imageUpscaler.upscaleImage(
                     imagePath = imagePath,
                     saveAfterUpscaled = true,
-                    resize512 = false,
+                    smallerImageByPercentage = 0.75f,
                     resizeAfterUpscale = true,
                     delegate = ImageUpscaler.Delegate.NNAPI
                 )
@@ -272,39 +273,57 @@ class MainActivity : AppCompatActivity() {
 ### 1. 不同的处理模式
 
 ```java
-// 标准4倍超分辨率
+// 标准4倍超分辨率（不缩小，不恢复尺寸）
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-    imagePath, false, false, false, ImageUpscaler.Delegate.NNAPI
+    imagePath, false, 0.0f, false
 );
 
-// 先调整到512px再处理（适合大图像）
+// 先缩小75%再处理（适合大图像，保留25%尺寸）
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-    imagePath, false, true, false, ImageUpscaler.Delegate.NNAPI
+    imagePath, false, 0.75f, false
 );
 
-// 处理后恢复到合适尺寸（如1280px宽度）
+// 处理后恢复到原始尺寸（推荐）
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-    imagePath, false, false, true, ImageUpscaler.Delegate.NNAPI
+    imagePath, false, 0.75f, true
 );
 
 // 保存处理结果到文档目录
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-    imagePath, true, false, false, ImageUpscaler.Delegate.NNAPI
+    imagePath, true, 0.75f, true
 );
 ```
 
-### 2. 硬件加速选项
+**参数说明：**
+- `imagePath`: 图像文件路径
+- `saveAfterUpscaled`: 是否保存到Documents目录（开发测试用，生产环境建议使用后删除）
+- `smallerImageByPercentage`: 缩小百分比（0.0=不缩小，0.75=缩小75%保留25%）
+- `resizeAfterUpscale`: 是否恢复到原始尺寸（使用专业多步骤降采样算法）
+
+### 2. 硬件加速（自动处理）
+
+**✨ 重要更新：** AAR现在自动处理硬件加速，无需手动指定代理类型！
 
 ```java
-// 使用NNAPI硬件加速（推荐）
-ImageUpscaler.Delegate.NNAPI
+// AAR内部自动处理：
+// 1. 首先尝试NNAPI（如果设备支持）
+// 2. 如果NNAPI失败或输出质量差，自动回退到CPU
+// 3. 对于已知问题设备（如ZTE），直接使用CPU
 
-// 使用CPU处理（兼容性最好）
-ImageUpscaler.Delegate.CPU
+// 您只需调用方法，AAR会自动选择最佳硬件加速方式
+ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
+    imagePath, false, 0.75f, true
+);
 
-// 检查可用的硬件加速选项
+// 检查可用的硬件加速选项（可选）
 List<ImageUpscaler.Delegate> availableDelegates = imageUpscaler.getAvailableDelegates();
 ```
+
+**自动回退策略：**
+- ✅ 已知问题设备检测（ZTE等）
+- ✅ NNAPI质量测试（检测输出是否有效）
+- ✅ 自动CPU回退（保证100%兼容性）
+- ✅ 详细日志输出（便于调试）
 
 ### 3. 错误处理和日志
 
@@ -313,7 +332,7 @@ private void upscaleImageWithErrorHandling(String imagePath) {
     executorService.execute(() -> {
         try {
             ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-                imagePath, false, false, false, ImageUpscaler.Delegate.NNAPI
+                imagePath, false, 0.75f, true
             );
             
             runOnUiThread(() -> {
@@ -374,25 +393,31 @@ ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
 activityManager.getMemoryInfo(memoryInfo);
 Log.d("Memory", "可用内存: " + memoryInfo.availMem / (1024 * 1024) + "MB");
 
-// 尝试使用CPU代理
-boolean success = imageUpscaler.initializeBlocking(null, ImageUpscaler.Delegate.CPU);
+// AAR会自动处理硬件加速和回退，无需手动指定
+boolean success = imageUpscaler.initializeBlocking();
 ```
 
 ### Q2: 处理大图像时出现内存不足？
-**A:** 使用resize512选项：
+**A:** 使用smallerImageByPercentage参数：
 ```java
-// 对于大图像，先调整到512px再处理
+// 对于大图像，先缩小75%再处理，然后恢复到原始尺寸
 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-    imagePath, false, true, true, ImageUpscaler.Delegate.NNAPI
+    imagePath, false, 0.75f, true
+);
+
+// 或者缩小更多（90%），保留10%
+ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
+    imagePath, false, 0.90f, true
 );
 ```
 
 ### Q3: 如何提高处理速度？
 **A:** 优化建议：
-- 使用NNAPI硬件加速
-- 预先调整图像尺寸
+- AAR自动使用NNAPI硬件加速（如果设备支持）
+- 使用smallerImageByPercentage预先调整图像尺寸
 - 在后台线程处理
 - 复用ImageUpscaler实例
+- 对于大图像，使用0.75或更高的缩小比例
 
 ### Q4: 支持哪些图像格式？
 **A:** 支持Android标准格式：
@@ -470,8 +495,7 @@ private void processImageWithMemoryOptimization(String imagePath) {
     executorService.execute(() -> {
         ImageUpscaler.UpscaleResult result = null;
         try {
-            result = imageUpscaler.upscaleImageBlocking(imagePath, false, false, false, 
-                                                      ImageUpscaler.Delegate.NNAPI);
+            result = imageUpscaler.upscaleImageBlocking(imagePath, false, 0.75f, true);
             
             runOnUiThread(() -> {
                 if (result.getSuccess() && result.getOutputBitmap() != null) {
@@ -510,7 +534,7 @@ private void upscaleImageWithProgress(String imagePath) {
         long startTime = System.currentTimeMillis();
         
         ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-            imagePath, false, false, false, ImageUpscaler.Delegate.NNAPI
+            imagePath, false, 0.75f, true
         );
         
         long processingTime = System.currentTimeMillis() - startTime;
@@ -542,7 +566,7 @@ private void batchUpscaleImages(List<String> imagePaths) {
         for (String imagePath : imagePaths) {
             try {
                 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-                    imagePath, true, false, false, ImageUpscaler.Delegate.NNAPI
+                    imagePath, true, 0.75f, true
                 );
                 
                 completed++;
