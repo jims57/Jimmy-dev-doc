@@ -78,7 +78,7 @@ dependencies {
 }
 ```
 
-**✨ 重要提示：** wq-image-upscaler-1.0.0.aar已经内置了所有必需的依赖，包括：
+**重要提示：** wq-image-upscaler-1.0.0.aar已经内置了所有必需的依赖，包括：
 - `org.tensorflow:tensorflow-lite:2.14.0`
 - `org.tensorflow:tensorflow-lite-support:0.4.4`
 - `org.tensorflow:tensorflow-lite-metadata:0.4.4`
@@ -320,10 +320,10 @@ List<ImageUpscaler.Delegate> availableDelegates = imageUpscaler.getAvailableDele
 ```
 
 **自动回退策略：**
-- ✅ 已知问题设备检测（ZTE等）
-- ✅ NNAPI质量测试（检测输出是否有效）
-- ✅ 自动CPU回退（保证100%兼容性）
-- ✅ 详细日志输出（便于调试）
+- 已知问题设备检测（ZTE等）
+- NNAPI质量测试（检测输出是否有效）
+- 自动CPU回退（保证100%兼容性）
+- 详细日志输出（便于调试）
 
 ### 3. 错误处理和日志
 
