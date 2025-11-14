@@ -28,7 +28,7 @@ WQMp3StreamPlayer 是一个轻量级高性能的 iOS XCFramework 库，专注于
 - 状态监听：完善的回调机制
 - 静态库：无需嵌入，只需链接
 
-### 1.3 自动头部检测（v2.0新特性）
+### 1.3 自动头部检测（v1.0.0新特性）
 
 XCFramework 会自动检测MP3流是否包含12字节头部（8字节 startTimeId + 4字节 messageId），应用层无需配置。
 
@@ -213,7 +213,7 @@ self.player.callback = self;
 
 ### Q1: 如何判断是否需要配置头部？
 
-A: 不需要判断！v2.0版本会自动检测。推荐使用：
+A: 不需要判断！v1.0.0版本会自动检测。推荐使用：
 ```objc
 [self.player initializeWithConfig:nil timeout:15.0];
 ```
@@ -234,7 +234,7 @@ WQStreamConfig *config = [[WQStreamConfig alloc] initWithStartTimeId:123456 mess
 
 ### Q4: 播放有杂音怎么办？
 
-A: 使用v2.0自动检测功能即可解决。如果仍有问题，检查：
+A: 使用v1.0.0自动检测功能即可解决。如果仍有问题，检查：
 1. 网络数据是否完整
 2. 服务器返回的是否是标准MP3格式
 
