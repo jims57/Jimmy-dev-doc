@@ -1,8 +1,8 @@
 # WQMp3StreamPlayer XCFramework 使用指南 (iOS)
 
 > 作者：Jimmy Gan  
-> 日期：2025-11-14  
-> 版本：v1.0.0
+> 日期：2025-11-16  
+> 版本：v1.2.0
 
 ## 目录
 
@@ -24,13 +24,32 @@ WQMp3StreamPlayer 是一个轻量级高性能的 iOS XCFramework 库，专注于
 
 - 简单纯粹：只负责 MP3 流播放，不涉及网络层
 - 自动检测：自动检测MP3流是否包含12字节头部
+- 自动完成：自动检测空流信号和超时，精确触发完成回调
+- 音量控制：支持静音和恢复音量
 - 灵活通用：适用于任何数据源（WebSocket、HTTP、本地文件等）
 - 状态监听：完善的回调机制
 - 静态库：无需嵌入，只需链接
 
-### 1.3 自动头部检测（v1.0.0新特性）
+### 1.3 自动头部检测（v1.0.0）
 
 XCFramework 会自动检测MP3流是否包含12字节头部（8字节 startTimeId + 4字节 messageId），应用层无需配置。
+
+### 1.4 自动完成检测（v1.2.0新特性）
+
+XCFramework 会自动检测播放完成，无需手动调用 `notifyDataComplete`：
+
+- **空流检测**：自动识别0字节或12字节头部的空流信号
+- **超时检测**：如果15秒内无新数据，自动标记完成
+- **精确回调**：延迟1.5秒确保硬件缓冲区播放完成后才触发 `onPlaybackCompleted`
+- **零配置**：应用层只需 `feedData`，完成时自动收到回调
+
+### 1.5 音量控制（v1.2.0新特性）
+
+支持播放过程中动态调整音量：
+
+- `mute`：静音（音量设为0）
+- `restoreVolume`：恢复之前的音量
+- 播放继续，不影响播放状态
 
 ---
 
@@ -38,7 +57,7 @@ XCFramework 会自动检测MP3流是否包含12字节头部（8字节 startTimeI
 
 ### 2.1 添加 XCFramework
 
-1. 将 `WQMp3StreamPlayerFramework.xcframework` 复制到项目目录
+1. 将 `WQMp3StreamPlayer.xcframework` 复制到项目目录
 2. Xcode -> Target -> General -> Frameworks, Libraries, and Embedded Content
 3. 点击 + 号，选择 Add Files，选择 XCFramework
 4. 设置为 Do Not Embed（静态库）
@@ -46,7 +65,7 @@ XCFramework 会自动检测MP3流是否包含12字节头部（8字节 startTimeI
 ### 2.2 基本使用
 
 ```objc
-#import <WQMp3StreamPlayerFramework/WQMp3StreamPlayerFramework.h>
+#import <WQMp3StreamPlayer/WQMp3StreamPlayer.h>
 
 // 1. 创建播放器
 self.player = [[WQMp3StreamPlayer alloc] init];
@@ -61,8 +80,14 @@ self.player.callback = self;
 // 4. 喂数据（在WebSocket回调中）
 [self.player feedData:audioData];
 
-// 5. 停止
+// 5. 静音/恢复音量（可选）
+[self.player mute];           // 静音
+[self.player restoreVolume];  // 恢复音量
+
+// 6. 停止
 [self.player stopImmediatelyAndReset];
+
+// 注意：v1.2.0 不需要手动调用 notifyDataComplete，XCFramework 会自动检测完成
 ```
 
 ---
@@ -73,11 +98,13 @@ self.player.callback = self;
 
 | 方法 | 说明 |
 |------|------|
-| `initializeWithConfig:timeout:` | 初始化（传nil自动检测头部） |
+| `initializeWithConfig:timeout:` | 初始化（传nil自动检测头部，timeout默认15秒） |
 | `start` | 开始播放 |
-| `feedData:` | 喂入音频数据 |
+| `feedData:` | 喂入音频数据（自动检测空流和超时） |
+| `mute` | 静音（v1.2.0新增） |
+| `restoreVolume` | 恢复音量（v1.2.0新增） |
 | `stopImmediatelyAndReset` | 立即停止并重置 |
-| `notifyDataComplete` | 通知数据传输完成 |
+| ~~`notifyDataComplete`~~ | ⚠️ v1.2.0已废弃，自动检测完成 |
 
 ### 3.2 回调协议
 
@@ -108,7 +135,7 @@ self.player.callback = self;
 
 ```objc
 #import <UIKit/UIKit.h>
-#import <WQMp3StreamPlayerFramework/WQMp3StreamPlayerFramework.h>
+#import <WQMp3StreamPlayer/WQMp3StreamPlayer.h>
 
 @interface ViewController : UIViewController <WQPlayerCallback, NSURLSessionWebSocketDelegate>
 @end
@@ -156,11 +183,22 @@ self.player.callback = self;
 - (void)receiveMessage {
     [self.webSocketTask receiveMessageWithCompletionHandler:^(NSURLSessionWebSocketMessage *message, NSError *error) {
         if (message.type == NSURLSessionWebSocketMessageTypeData) {
-            // 喂数据给播放器（自动处理头部）
+            // 喂数据给播放器（自动处理头部、空流、超时）
             [self.player feedData:message.data];
         }
         [self receiveMessage]; // 继续接收
     }];
+}
+
+// 静音/恢复音量
+- (void)toggleMute {
+    if (self.isMuted) {
+        [self.player restoreVolume];
+        self.isMuted = NO;
+    } else {
+        [self.player mute];
+        self.isMuted = YES;
+    }
 }
 
 // 开始播放
@@ -202,6 +240,19 @@ self.player.callback = self;
 - (void)onPlaybackCompleted {
     NSLog(@"播放完成");
     self.isPlaying = NO;
+    
+    // v1.2.0: 此回调在所有音频播放完成后自动触发
+    // 保证：
+    // 1. 所有MP3数据已接收完成（空流或超时）
+    // 2. 所有音频已播放完成
+    // 3. 硬件缓冲区已播放完成（延迟1.5秒）
+    // 4. 用户听不到任何声音
+    
+    // 可以安全地执行后续任务：
+    // - 更新UI
+    // - 播放下一个音频
+    // - 关闭WebSocket
+    // - 释放资源
 }
 
 @end
@@ -217,6 +268,15 @@ A: 不需要判断！v1.0.0版本会自动检测。推荐使用：
 ```objc
 [self.player initializeWithConfig:nil timeout:15.0];
 ```
+
+### Q1.5: 还需要手动调用 notifyDataComplete 吗？（v1.2.0）
+
+A: **不需要！** v1.2.0会自动检测完成：
+- 自动识别空流信号（0字节或12字节头部）
+- 自动超时检测（15秒无新数据）
+- 自动触发 `onPlaybackCompleted` 回调
+
+只需要 `feedData`，完成时自动收到回调。
 
 ### Q2: 自动检测原理是什么？
 
@@ -247,6 +307,19 @@ A: 在 `onPlaybackCompleted` 回调中开始下一个：
 }
 ```
 
+### Q5.5: 如何在播放过程中静音？（v1.2.0）
+
+A: 使用 `mute` 和 `restoreVolume` 方法：
+```objc
+// 静音
+[self.player mute];
+
+// 恢复音量
+[self.player restoreVolume];
+```
+
+播放会继续，只是音量变为0。
+
 ### Q6: 内存占用如何？
 
 A: 使用流式播放技术，内存占用很小（通常 < 5MB）。
@@ -259,11 +332,24 @@ A: iOS 13.0 及以上版本。
 
 ## 6. 最佳实践
 
-### 6.1 推荐用法
+### 6.1 推荐用法（v1.2.0）
 
 ```objc
-// 使用自动检测（推荐）
+// 1. 初始化（自动检测头部）
 [self.player initializeWithConfig:nil timeout:15.0];
+
+// 2. 启动
+[self.player start];
+
+// 3. 喂数据（自动检测空流和超时）
+[self.player feedData:audioData];
+
+// 4. 等待自动完成回调
+// 不需要手动调用 notifyDataComplete
+
+// 5. 音量控制（可选）
+[self.player mute];           // 静音
+[self.player restoreVolume];  // 恢复
 ```
 
 ### 6.2 错误处理
@@ -281,6 +367,28 @@ A: iOS 13.0 及以上版本。
 ```objc
 - (void)dealloc {
     [self.player stopImmediatelyAndReset];
+}
+```
+
+### 6.4 完成回调时机保证（v1.2.0）
+
+```objc
+- (void)onPlaybackCompleted {
+    // ✅ 当这个回调被触发时，保证：
+    // 1. 所有MP3数据已接收完成（空流或超时）
+    // 2. 所有音频数据已入队到AudioQueue
+    // 3. 所有缓冲区已播放完成
+    // 4. 硬件缓冲区已播放完成（延迟1.5秒）
+    // 5. 用户已听到最后一个音频样本
+    
+    // ✅ 此时可以安全地：
+    // - 更新UI状态为"已结束"
+    // - 播放下一个音频
+    // - 关闭WebSocket连接
+    // - 释放资源
+    // - 执行任何完成后的任务
+    
+    NSLog(@"播放完成，所有音频已播放完成");
 }
 ```
 
