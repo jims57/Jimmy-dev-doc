@@ -1,8 +1,8 @@
 # WQMp3StreamPlayer AAR 使用指南
 
 > 作者：Jimmy Gan  
-> 日期：2025-10-27  
-> 版本：v1.0.0
+> 日期：2025-11-17  
+> 版本：v1.3.0
 
 ## 目录
 
@@ -31,6 +31,8 @@ WQMp3StreamPlayer 是一个轻量级高性能的 Android AAR 库，专注于播�
 - ✅ **状态监听**：完善的回调机制，实时获取播放状态
 - ✅ **资源高效**：自动管理音频缓冲和播放资源
 - ✅ **线程安全**：内部处理了线程切换
+- ✅ **音量控制**：支持静音和恢复音量功能 (v1.3.0)
+- ✅ **自动完成检测**：自动识别空流完成信号 (v1.3.0)
 
 ### 1.3 什么时候需要移除头部？
 
@@ -94,11 +96,11 @@ dependencies {
 
 **方式二：使用 AAR 文件 - 需要手动添加Media3依赖**
 
-将 `wqmp3streamplayer-release.aar` 文件复制到项目的 `app/libs/` 目录，然后在 `app/build.gradle` 中添加：
+将 `wqmp3streamplayer.aar` 文件复制到项目的 `app/libs/` 目录，然后在 `app/build.gradle` 中添加：
 
 ```gradle
 dependencies {
-    implementation files('libs/wqmp3streamplayer-release.aar')
+    implementation files('libs/wqmp3streamplayer.aar')
     
     // 必需的Media3依赖
     implementation 'androidx.media3:media3-exoplayer:1.2.0'
@@ -275,7 +277,7 @@ dependencies {
 YourProject/
 ├── app/
 │   ├── libs/
-│   │   └── wqmp3streamplayer-release.aar  ← 放在这里
+│   │   └── wqmp3streamplayer.aar  ← 放在这里
 │   ├── build.gradle
 │   └── src/
 ```
@@ -299,7 +301,7 @@ android {
 
 dependencies {
     // AAR 库
-    implementation files('libs/wqmp3streamplayer-release.aar')
+    implementation files('libs/wqmp3streamplayer.aar')
     
     // Media3 库 - 必需依赖（手动添加）
     implementation 'androidx.media3:media3-exoplayer:1.2.0'
@@ -344,21 +346,28 @@ WQMp3StreamPlayer player = new WQMp3StreamPlayer(this);
 |------|------|------|
 | `setCallback(PlayerCallback)` | 设置状态回调 | 回调接口 |
 | `initialize(StreamConfig)` | 初始化配置 | 流配置（可null） |
+| `initialize(StreamConfig, float)` | 初始化配置（带超时） | 流配置、超时秒数 (v1.3.0) |
 | `start()` | 开始播放 | 无 |
 | `feedData(byte[])` | 喂入音频数据 | 音频数据字节数组 |
 | `notifyDataComplete()` | 通知数据传输完成 | 无 |
 | `stop()` | 停止播放 | 无 |
 | `pause()` | 暂停播放 | 无 |
 | `resume()` | 恢复播放 | 无 |
+| `setVolume(float)` | 设置音量 | 音量值 0.0-1.0 (v1.3.0) |
+| `getVolume()` | 获取当前音量 | 无 (v1.3.0) |
+| `mute()` | 静音 | 无 (v1.3.0) |
+| `restoreVolume(float)` | 恢复音量 | 之前的音量值 (v1.3.0) |
 | `getCurrentState()` | 获取当前状态 | 无 |
 | `isPlaying()` | 是否正在播放 | 无 |
 | `release()` | 释放所有资源 | 无 |
 
 #### 4.1.3 方法详解
 
-##### initialize(StreamConfig)
+##### initialize(StreamConfig) / initialize(StreamConfig, float)
 
 初始化播放器配置。如果音频数据包含12字节头部，需要配置 `startTimeId` 和 `messageId`。
+
+**v1.3.0 新增：** 支持设置超时参数，如果在指定时间内没有新数据，将自动标记完成。
 
 ```java
 // 有头部的情况
@@ -368,11 +377,11 @@ StreamConfig config = new StreamConfig.Builder()
         .build();
 player.initialize(config);
 
-// 无头部的情况
+// 无头部的情况（推荐 - AAR会自动检测）
+player.initialize(null, 5.0f);  // 5秒超时
+
+// 使用默认超时（5秒）
 player.initialize(null);
-// 或
-StreamConfig config = new StreamConfig.Builder().build();
-player.initialize(config);
 ```
 
 ##### start()
@@ -386,6 +395,8 @@ player.start();
 ##### feedData(byte[])
 
 这是最重要的方法，用于将接收到的音频数据喂给播放器。
+
+**v1.3.0 新增：** 自动检测空流完成信号（0字节或12字节头部空流）。
 
 ```java
 // 在WebSocket回调中
@@ -402,12 +413,19 @@ webSocket.setListener(new WebSocketListener() {
 - 如果配置了 `startTimeId` 和 `messageId`，AAR 会自动移除每个数据包前的 12 字节
 - 如果没有配置，AAR 直接播放原始数据
 
+**自动完成检测 (v1.3.0)：**
+- 检测0字节空流：自动触发完成
+- 检测12字节头部空流：自动触发完成
+- 无需手动调用 `notifyDataComplete()`
+
 ##### notifyDataComplete()
 
 通知播放器所有数据已传输完成，播放器会在播放完缓冲数据后触发 `onPlaybackCompleted()` 回调。
 
+**v1.3.0 注意：** 大多数情况下不需要手动调用此方法，AAR会自动检测空流完成信号。
+
 ```java
-// 当WebSocket收到结束信号或连接关闭时
+// 当WebSocket收到结束信号或连接关闭时（可选）
 player.notifyDataComplete();
 ```
 
@@ -417,6 +435,31 @@ player.notifyDataComplete();
 
 ```java
 player.stop();
+```
+
+##### setVolume(float) / getVolume() (v1.3.0)
+
+控制播放音量。
+
+```java
+// 设置音量（0.0 = 静音，1.0 = 最大音量）
+player.setVolume(0.5f);  // 50%音量
+
+// 获取当前音量
+float currentVolume = player.getVolume();
+```
+
+##### mute() / restoreVolume(float) (v1.3.0)
+
+静音和恢复音量的便捷方法。
+
+```java
+// 保存当前音量并静音
+float previousVolume = player.getVolume();
+player.mute();  // 设置音量为0
+
+// 恢复之前的音量
+player.restoreVolume(previousVolume);
 ```
 
 ##### release()
