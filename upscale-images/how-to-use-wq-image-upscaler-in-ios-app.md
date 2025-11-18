@@ -178,7 +178,7 @@ class ViewController: UIViewController {
         }
     }
     
-    // 图像降噪处理
+    // 图像降噪处理（带进度回调）
     func upscaleImage(imagePath: String) {
         guard let upscaler = imageUpscaler else {
             print("图像增强器未初始化")
@@ -186,12 +186,26 @@ class ViewController: UIViewController {
         }
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            // 处理图像
+            // 准备输出路径（如果需要保存）
+            let outputPath: String? = nil  // nil表示不保存，或指定完整路径
+            // 示例：保存到Documents目录
+            // let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+            // let outputPath = (documentsPath as NSString).appendingPathComponent("upscaled_image.png")
+            
+            // 处理图像（带进度回调）
             let result = upscaler.upscaleImage(
                 atPath: imagePath,
-                saveAfterUpscaled: false,        // 是否保存到Documents
+                outputPath: outputPath,          // 输出路径（nil=不保存）
                 smallerImageByPercentage: 0.75,  // 缩小75%（保留25%）
-                resizeAfterUpscale: true         // 处理后恢复原始尺寸
+                resizeAfterUpscale: true,        // 处理后恢复原始尺寸
+                progressCallback: { progress in
+                    // 进度回调（0.0-100.0）
+                    DispatchQueue.main.async {
+                        print("处理进度: \(String(format: "%.2f", progress))%")
+                        // 更新UI进度条
+                        self?.progressLabel.text = "降噪中(\(String(format: "%.2f", progress))%)"
+                    }
+                }
             )
             
             DispatchQueue.main.async {
@@ -275,10 +289,25 @@ class ViewController: UIViewController {
 
 - (void)upscaleImageWithPath:(NSString *)imagePath {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // 准备输出路径（如果需要保存）
+        NSString *outputPath = nil;  // nil表示不保存
+        // 示例：保存到Documents目录
+        // NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        // NSString *documentsDirectory = [paths firstObject];
+        // outputPath = [documentsDirectory stringByAppendingPathComponent:@"upscaled_image.png"];
+        
         WQUpscaleResult *result = [self.imageUpscaler upscaleImageAtPath:imagePath
-                                                       saveAfterUpscaled:NO
+                                                              outputPath:outputPath
                                                 smallerImageByPercentage:0.75
-                                                      resizeAfterUpscale:YES];
+                                                      resizeAfterUpscale:YES
+                                                        progressCallback:^(float progress) {
+            // 进度回调（0.0-100.0）
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSLog(@"处理进度: %.2f%%", progress);
+                // 更新UI进度标签
+                self.progressLabel.text = [NSString stringWithFormat:@"降噪中(%.2f%%)", progress];
+            });
+        }];
         
         dispatch_async(dispatch_get_main_queue(), ^{
             if (result.success) {
@@ -307,44 +336,62 @@ class ViewController: UIViewController {
 ### 1. 不同的处理模式
 
 ```swift
-// 标准4倍降噪（不缩小，不恢复尺寸）
+// 标准4倍降噪（不缩小，不恢复尺寸，不保存）
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.0,
-    resizeAfterUpscale: false
+    resizeAfterUpscale: false,
+    progressCallback: nil
 )
 
 // 先缩小75%再处理（适合大图像，保留25%尺寸）
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.75,
-    resizeAfterUpscale: false
+    resizeAfterUpscale: false,
+    progressCallback: nil
 )
 
 // 处理后恢复到原始尺寸（推荐）
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.75,
-    resizeAfterUpscale: true
+    resizeAfterUpscale: true,
+    progressCallback: nil
 )
 
-// 保存处理结果到Documents目录
+// 保存处理结果到自定义路径
+let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+let outputPath = (documentsPath as NSString).appendingPathComponent("upscaled_image.png")
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: true,
+    outputPath: outputPath,  // 指定保存路径
     smallerImageByPercentage: 0.75,
-    resizeAfterUpscale: true
+    resizeAfterUpscale: true,
+    progressCallback: nil
+)
+
+// 带进度回调的处理（推荐）
+let result = imageUpscaler.upscaleImage(
+    atPath: imagePath,
+    outputPath: outputPath,
+    smallerImageByPercentage: 0.75,
+    resizeAfterUpscale: true,
+    progressCallback: { progress in
+        print("处理进度: \(String(format: "%.2f", progress))%")
+    }
 )
 ```
 
 **参数说明：**
-- `imagePath`: 图像文件路径（完整路径）
-- `saveAfterUpscaled`: 是否保存到Documents目录（开发测试用）
+- `imagePath`: 输入图像文件路径（完整路径）
+- `outputPath`: 输出图像保存路径（nil=不保存，指定路径=保存到该路径）
 - `smallerImageByPercentage`: 缩小百分比（0.0=不缩小，0.75=缩小75%保留25%）
 - `resizeAfterUpscale`: 是否恢复到原始尺寸（使用专业多步骤降采样算法）
+- `progressCallback`: 进度回调（可选，接收0.0-100.0的百分比值）
 
 ### 2. 硬件加速（自动处理）
 
@@ -359,9 +406,10 @@ let result = imageUpscaler.upscaleImage(
 // 您只需调用方法，XCFramework会自动选择最佳硬件加速方式
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.75,
-    resizeAfterUpscale: true
+    resizeAfterUpscale: true,
+    progressCallback: nil
 )
 
 // 检查当前使用的加速类型（可选）
@@ -387,9 +435,14 @@ func upscaleImageWithErrorHandling(imagePath: String) {
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
         let result = upscaler.upscaleImage(
             atPath: imagePath,
-            saveAfterUpscaled: false,
+            outputPath: nil,
             smallerImageByPercentage: 0.75,
-            resizeAfterUpscale: true
+            resizeAfterUpscale: true,
+            progressCallback: { progress in
+                DispatchQueue.main.async {
+                    self?.progressLabel.text = "降噪中(\(String(format: "%.2f", progress))%)"
+                }
+            }
         )
         
         DispatchQueue.main.async {
@@ -493,17 +546,19 @@ do {
 // 对于大图像，先缩小75%再处理，然后恢复到原始尺寸
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.75,
-    resizeAfterUpscale: true
+    resizeAfterUpscale: true,
+    progressCallback: nil
 )
 
 // 或者缩小更多（90%），保留10%
 let result = imageUpscaler.upscaleImage(
     atPath: imagePath,
-    saveAfterUpscaled: false,
+    outputPath: nil,
     smallerImageByPercentage: 0.90,
-    resizeAfterUpscale: true
+    resizeAfterUpscale: true,
+    progressCallback: nil
 )
 ```
 
@@ -564,9 +619,10 @@ class ImageUpscalerManager {
     }
     
     func upscaleImage(atPath path: String,
-                     saveAfterUpscaled: Bool = false,
+                     outputPath: String? = nil,
                      smallerImageByPercentage: Float = 0.75,
-                     resizeAfterUpscale: Bool = true) -> WQUpscaleResult? {
+                     resizeAfterUpscale: Bool = true,
+                     progressCallback: ((Float) -> Void)? = nil) -> WQUpscaleResult? {
         guard isInitialized, let upscaler = imageUpscaler else {
             print("图像增强器未就绪")
             return nil
@@ -574,9 +630,10 @@ class ImageUpscalerManager {
         
         return upscaler.upscaleImage(
             atPath: path,
-            saveAfterUpscaled: saveAfterUpscaled,
+            outputPath: outputPath,
             smallerImageByPercentage: smallerImageByPercentage,
-            resizeAfterUpscale: resizeAfterUpscale
+            resizeAfterUpscale: resizeAfterUpscale,
+            progressCallback: progressCallback
         )
     }
     
@@ -594,9 +651,10 @@ func processImageWithMemoryOptimization(imagePath: String) {
         autoreleasepool {
             guard let result = self?.imageUpscaler?.upscaleImage(
                 atPath: imagePath,
-                saveAfterUpscaled: false,
+                outputPath: nil,
                 smallerImageByPercentage: 0.75,
-                resizeAfterUpscale: true
+                resizeAfterUpscale: true,
+                progressCallback: nil
             ) else { return }
             
             DispatchQueue.main.async {
@@ -615,23 +673,31 @@ func processImageWithMemoryOptimization(imagePath: String) {
 
 ```swift
 func upscaleImageWithProgress(imagePath: String) {
-    // 显示加载指示器
-    let loadingView = showLoadingIndicator(message: "正在处理图像，请稍候...")
+    // 显示进度标签
+    progressLabel.isHidden = false
+    progressLabel.text = "降噪中(0.00%)"
     
     let startTime = Date()
     
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
         let result = self?.imageUpscaler?.upscaleImage(
             atPath: imagePath,
-            saveAfterUpscaled: false,
+            outputPath: nil,
             smallerImageByPercentage: 0.75,
-            resizeAfterUpscale: true
+            resizeAfterUpscale: true,
+            progressCallback: { progress in
+                // 实时更新进度
+                DispatchQueue.main.async {
+                    self?.progressLabel.text = "降噪中(\(String(format: "%.2f", progress))%)"
+                }
+            }
         )
         
         let processingTime = Date().timeIntervalSince(startTime)
         
         DispatchQueue.main.async {
-            loadingView.dismiss()
+            // 隐藏进度标签
+            self?.progressLabel.isHidden = true
             
             if let result = result, result.success {
                 self?.imageView.image = result.outputImage
@@ -652,13 +718,24 @@ func batchUpscaleImages(imagePaths: [String]) {
     var completed = 0
     
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-        for imagePath in imagePaths {
+        for (index, imagePath) in imagePaths.enumerated() {
             autoreleasepool {
+                // 为每个图像生成唯一的输出路径
+                let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+                let outputPath = (documentsPath as NSString).appendingPathComponent("upscaled_\(index).png")
+                
                 let result = self?.imageUpscaler?.upscaleImage(
                     atPath: imagePath,
-                    saveAfterUpscaled: true,
+                    outputPath: outputPath,
                     smallerImageByPercentage: 0.75,
-                    resizeAfterUpscale: true
+                    resizeAfterUpscale: true,
+                    progressCallback: { progress in
+                        // 单个图像的进度
+                        DispatchQueue.main.async {
+                            let overallProgress = (Float(completed) + progress / 100.0) / Float(total) * 100.0
+                            self?.statusLabel.text = "总进度: \(String(format: "%.1f", overallProgress))% (\(completed + 1)/\(total))"
+                        }
+                    }
                 )
                 
                 completed += 1
