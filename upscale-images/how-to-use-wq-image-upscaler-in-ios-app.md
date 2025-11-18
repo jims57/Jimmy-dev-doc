@@ -43,8 +43,8 @@ WQImageUpscaler是一个专为iOS开发的图像降噪XCFramework库，具有以
 - **编译使用**：Swift 5（使用 `-swift-version 5` 编译）
 - **兼容范围**：Swift 5.0 - Swift 6.2+
 - **支持的Swift版本**：
-  - ✅ Swift 5.0, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10
-  - ✅ Swift 6.0, 6.1, 6.2+
+  -  Swift 5.0, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10
+  -  Swift 6.0, 6.1, 6.2+
 
 ### Xcode版本要求
 
@@ -59,10 +59,10 @@ WQImageUpscaler是一个专为iOS开发的图像降噪XCFramework库，具有以
 
 ### 重要说明
 
-- ✅ **广泛兼容**：支持iOS 13.0+，覆盖iPhone 6s及更新机型
-- ✅ **Swift版本灵活**：无论项目使用Swift 5.x还是6.x，都可以无缝集成
-- ⚠️ **仅支持真机**：本库仅支持真机运行，不支持模拟器
-- ✅ **ABI稳定性**：基于Swift 5.0的ABI稳定性，一次编译，到处运行
+-  **广泛兼容**：支持iOS 13.0+，覆盖iPhone 6s及更新机型
+-  **Swift版本灵活**：无论项目使用Swift 5.x还是6.x，都可以无缝集成
+-  **仅支持真机**：本库仅支持真机运行，不支持模拟器
+-  **ABI稳定性**：基于Swift 5.0的ABI稳定性，一次编译，到处运行
 
 ## 获取XCFramework库
 
@@ -439,7 +439,7 @@ func handleError(_ message: String) {
 ```swift
 // 在项目中添加编译时检查
 #if swift(>=5.0)
-print("✅ Swift 5.0+ - 兼容WQImageUpscaler")
+print(" Swift 5.0+ - 兼容WQImageUpscaler")
 #else
 #error("需要Swift 5.0或更高版本")
 #endif
@@ -448,8 +448,8 @@ print("✅ Swift 5.0+ - 兼容WQImageUpscaler")
 **支持的配置：**
 | 项目Swift版本 | 兼容性 | 说明 |
 |--------------|--------|------|
-| Swift 5.0-5.10 | ✅ 完全兼容 | 包括5.9 |
-| Swift 6.0-6.2+ | ✅ 完全兼容 | 最新版本 |
+| Swift 5.0-5.10 |  完全兼容 | 包括5.9 |
+| Swift 6.0-6.2+ |  完全兼容 | 最新版本 |
 
 ### Q2: 为什么初始化失败？
 
