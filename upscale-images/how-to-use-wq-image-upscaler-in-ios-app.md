@@ -78,8 +78,8 @@ cd /path/to/ios_use_cpp_demo/my-info/build_ios_xcframework
    - `TensorFlowLiteCCoreML.xcframework`
 
 3. 在弹出的对话框中：
-   - ✅ 勾选 "Copy items if needed"
-   - ✅ 选择您的应用target
+   -  勾选 "Copy items if needed"
+   -  选择您的应用target
    - 点击 "Finish"
 
 ### 第2步：配置框架链接方式
@@ -95,8 +95,8 @@ cd /path/to/ios_use_cpp_demo/my-info/build_ios_xcframework
 
 1. 将 `model.tflite` 文件拖入Xcode项目
 2. 在弹出的对话框中：
-   - ✅ 勾选 "Copy items if needed"
-   - ✅ 勾选 "Add to targets"（选择您的应用target）
+   -  勾选 "Copy items if needed"
+   -  勾选 "Add to targets"（选择您的应用target）
    - 点击 "Finish"
 
 3. 验证模型文件已添加到 "Copy Bundle Resources"：
@@ -683,11 +683,11 @@ CPU代理初始化成功
 
 ### 版本 1.0.0 (2025年11月18日)
 
-- ✅ 首个正式版本发布
-- ✅ 支持iOS 15.0+，arm64架构
-- ✅ 自动GPU (Metal)加速，智能CPU回退
-- ✅ 完整的中文控制台日志
-- ✅ 静态框架，简化集成流程
-- ✅ AI模型，4倍图像增强
-- ✅ 自动瓦片处理，支持大图像
-- ✅ 多步骤降采样算法，高质量尺寸恢复
+-  首个正式版本发布
+-  支持iOS 15.0+，arm64架构
+-  自动GPU (Metal)加速，智能CPU回退
+-  完整的中文控制台日志
+-  静态框架，简化集成流程
+-  AI模型，4倍图像增强
+-  自动瓦片处理，支持大图像
+-  多步骤降采样算法，高质量尺寸恢复
