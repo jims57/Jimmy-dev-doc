@@ -4,7 +4,7 @@
 
 *最后更新：2025年11月18日*
 
-本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】图片降噪增强XCFramework库（WQImageUpscaler.xcframework），该库基于Real-ESRGAN AI模型提供强大的图像降噪功能。
+本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】图片降噪增强XCFramework库（WQImageUpscaler.xcframework），该库基于AI模型提供强大的图像降噪功能。
 
 ## 目录
 
