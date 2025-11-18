@@ -130,7 +130,17 @@ class ViewController: UIViewController {
         // 在后台线程初始化
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
-                try self?.imageUpscaler?.initialize()
+                // 方式1：使用默认路径（自动查找）
+                // try self?.imageUpscaler?.initialize()
+                
+                // 方式2：使用bundleForClass（推荐 - 支持framework集成）
+                let bundle = Bundle(for: type(of: self!))
+                if let modelPath = bundle.path(forResource: "model", ofType: "tflite") {
+                    try self?.imageUpscaler?.initialize(withModelPath: modelPath)
+                } else {
+                    // 回退到默认初始化
+                    try self?.imageUpscaler?.initialize()
+                }
                 
                 DispatchQueue.main.async {
                     print("图像增强器初始化成功")
@@ -210,15 +220,30 @@ class ViewController: UIViewController {
     self.imageUpscaler = [[WQImageUpscaler alloc] init];
     
     // 在后台线程初始化
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         NSError *error = nil;
-        [self.imageUpscaler initializeAndReturnError:&error];
+        BOOL success = NO;
+        
+        // 方式1：使用默认路径（自动查找）
+        // success = [self.imageUpscaler initializeAndReturnError:&error];
+        
+        // 方式2：使用bundleForClass（推荐 - 支持framework集成）
+        NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+        NSString *modelPath = [bundle pathForResource:@"model" ofType:@"tflite"];
+        
+        if (modelPath) {
+            NSLog(@"找到模型文件: %@", modelPath);
+            success = [self.imageUpscaler initializeWithModelPath:modelPath error:&error];
+        } else {
+            NSLog(@"未找到模型文件，尝试使用默认初始化");
+            success = [self.imageUpscaler initializeAndReturnError:&error];
+        }
         
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (error) {
-                NSLog(@"初始化失败: %@", error.localizedDescription);
-            } else {
+            if (success) {
                 NSLog(@"图像增强器初始化成功");
+            } else {
+                NSLog(@"图像增强器初始化失败: %@", error.localizedDescription);
             }
         });
     });
@@ -384,11 +409,13 @@ func handleError(_ message: String) {
 - 模型文件未添加到项目
 - 模型文件未包含在"Copy Bundle Resources"中
 - TensorFlow Lite依赖缺失
+- 在framework中使用时未使用bundleForClass
 
 **解决方案：**
 ```swift
-// 1. 检查模型文件是否存在
-if let modelPath = Bundle.main.path(forResource: "model", ofType: "tflite") {
+// 1. 检查模型文件是否存在（推荐使用bundleForClass）
+let bundle = Bundle(for: type(of: self))
+if let modelPath = bundle.path(forResource: "model", ofType: "tflite") {
     print("模型文件路径: \(modelPath)")
 } else {
     print("错误: 模型文件未找到")
@@ -398,9 +425,13 @@ if let modelPath = Bundle.main.path(forResource: "model", ofType: "tflite") {
 let memoryInfo = ProcessInfo.processInfo.physicalMemory
 print("物理内存: \(memoryInfo / 1024 / 1024)MB")
 
-// 3. 初始化时捕获错误
+// 3. 初始化时捕获错误（使用自定义路径）
 do {
-    try imageUpscaler?.initialize()
+    if let modelPath = bundle.path(forResource: "model", ofType: "tflite") {
+        try imageUpscaler?.initialize(withModelPath: modelPath)
+    } else {
+        try imageUpscaler?.initialize()
+    }
 } catch {
     print("初始化错误: \(error)")
 }
@@ -691,3 +722,6 @@ CPU代理初始化成功
 -  AI模型，4倍图像增强
 -  自动瓦片处理，支持大图像
 -  多步骤降采样算法，高质量尺寸恢复
+-  **新增**：支持自定义模型路径初始化（`initialize(withModelPath:)`）
+-  **新增**：使用bundleForClass方式加载模型，支持framework嵌套集成
+-  **优化**：自动回退机制，优先bundleForClass，回退到mainBundle
