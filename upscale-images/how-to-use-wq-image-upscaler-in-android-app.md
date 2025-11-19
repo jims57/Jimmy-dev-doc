@@ -2,7 +2,7 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年11月11日*
+*最后更新：2025年11月19日*
 
 本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-upscaler-1.4.0.aar），该库基于AI模型提供强大的图像降噪功能。
 
@@ -27,6 +27,7 @@ wq-image-upscaler是一个专为Android开发的图像降噪AAR库，具有以�
 - **硬件加速**：自动NNAPI硬件加速，智能CPU回退
 - **内存优化**：自动瓦片处理，防止大图像内存溢出
 - **Java友好**：提供阻塞方法，简化Java集成
+- **进度回调**：实时进度更新，平滑的用户体验
 - **中文支持**：完整的中文API文档和错误信息
 - **智能回退**：自动检测设备兼容性，NNAPI失败时自动切换CPU
 
@@ -147,8 +148,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     
-    // 图像降噪处理
+    // 图像降噪处理（带进度回调）
     private void upscaleImage(String imagePath) {
+        // 显示进度标签
+        runOnUiThread(() -> {
+            textProgressLabel.setVisibility(View.VISIBLE);
+            textProgressLabel.setText("降噪中(0.00%)");
+        });
+        
         executorService.execute(() -> {
             // 使用阻塞方法处理图像 - 无需协程！
             // AAR会自动处理硬件加速（NNAPI -> CPU回退）
@@ -156,11 +163,18 @@ public class MainActivity extends AppCompatActivity {
                 imagePath,                    // 图像路径
                 true,                        // 是否保存处理结果
                 0.75f,                       // 缩小参数（0.75表示缩小75%，保留25%）
-                true                         // 是否在处理后恢复到原始尺寸
+                true,                        // 是否在处理后恢复到原始尺寸
+                (Float progress) -> {        // 进度回调（可选）
+                    runOnUiThread(() -> textProgressLabel.setText(String.format("降噪中(%.2f%%)", progress)));
+                    return null;
+                }
             );
             
             // 在主线程更新UI
             runOnUiThread(() -> {
+                // 隐藏进度标签
+                textProgressLabel.setVisibility(View.GONE);
+                
                 if (result.getSuccess()) {
                     // 处理成功
                     if (result.getOutputBitmap() != null) {
@@ -230,8 +244,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // 图像降噪处理
+    // 图像降噪处理（带进度回调）
     private fun upscaleImage(imagePath: String) {
+        // 显示进度标签
+        textProgressLabel.visibility = View.VISIBLE
+        textProgressLabel.text = "降噪中(0.00%)"
+        
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 imageUpscaler.upscaleImage(
@@ -239,9 +257,17 @@ class MainActivity : AppCompatActivity() {
                     saveAfterUpscaled = true,
                     smallerImageByPercentage = 0.75f,
                     resizeAfterUpscale = true,
-                    delegate = ImageUpscaler.Delegate.NNAPI
+                    delegate = ImageUpscaler.Delegate.NNAPI,
+                    progressCallback = { progress ->
+                        runOnUiThread {
+                            textProgressLabel.text = String.format("降噪中(%.2f%%)", progress)
+                        }
+                    }
                 )
             }
+            
+            // 隐藏进度标签
+            textProgressLabel.visibility = View.GONE
             
             // 在主线程更新UI
             if (result.success) {
@@ -270,7 +296,67 @@ class MainActivity : AppCompatActivity() {
 
 ## 高级功能
 
-### 1. 不同的处理模式
+### 1. 进度回调（实时进度更新）
+
+**新功能：** AAR现在支持实时进度回调，提供平滑的用户体验！
+
+#### Java实现
+```java
+// 带进度回调的图像处理
+ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
+    imagePath,
+    true,
+    0.75f,
+    true,
+    (Float progress) -> {
+        // 进度回调：0.0 - 100.0
+        runOnUiThread(() -> {
+            progressTextView.setText(String.format("降噪中(%.2f%%)", progress));
+        });
+        return null; // 必须返回null以满足Kotlin Unit类型
+    }
+);
+```
+
+#### Kotlin实现
+```kotlin
+val result = imageUpscaler.upscaleImage(
+    imagePath = imagePath,
+    saveAfterUpscaled = true,
+    smallerImageByPercentage = 0.75f,
+    resizeAfterUpscale = true,
+    delegate = ImageUpscaler.Delegate.NNAPI,
+    progressCallback = { progress ->
+        runOnUiThread {
+            progressTextView.text = String.format("降噪中(%.2f%%)", progress)
+        }
+    }
+)
+```
+
+**进度分布：**
+- **0% - 25%**：初始化阶段（加载图像、缩放、模型初始化）
+  - 使用平滑模拟，随机间隔（150-250ms）和随机步长（0.5%-2.0%）
+  - 约4秒内从0%平滑过渡到25%
+  - 提供即时反馈，避免长时间停留在0%
+- **25% - 100%**：实际处理阶段（基于瓦片的图像处理）
+  - 真实进度，基于已处理的瓦片数量
+  - 公式：`25% + (已处理瓦片数 / 总瓦片数) × 75%`
+
+**UI集成示例：**
+```xml
+<!-- 在布局文件中添加进度标签 -->
+<TextView
+    android:id="@+id/textProgressLabel"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="降噪中(0.00%)"
+    android:textSize="14sp"
+    android:gravity="center"
+    android:visibility="gone" />
+```
+
+### 2. 不同的处理模式
 
 ```java
 // 标准4倍降噪（不缩小，不恢复尺寸）
@@ -299,8 +385,9 @@ ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
 - `saveAfterUpscaled`: 是否保存到Documents目录（开发测试用，生产环境建议使用后删除）
 - `smallerImageByPercentage`: 缩小百分比（0.0=不缩小，0.75=缩小75%保留25%）
 - `resizeAfterUpscale`: 是否恢复到原始尺寸（使用专业多步骤降采样算法）
+- `progressCallback`: 进度回调函数（可选），接收0.0-100.0的百分比值
 
-### 2. 硬件加速（自动处理）
+### 3. 硬件加速（自动处理）
 
 ** 重要更新：** AAR现在自动处理硬件加速，无需手动指定代理类型！
 
@@ -325,7 +412,7 @@ List<ImageUpscaler.Delegate> availableDelegates = imageUpscaler.getAvailableDele
 - 自动CPU回退（保证100%兼容性）
 - 详细日志输出（便于调试）
 
-### 3. 错误处理和日志
+### 4. 错误处理和日志
 
 ```java
 private void upscaleImageWithErrorHandling(String imagePath) {
@@ -522,25 +609,34 @@ private void processImageWithMemoryOptimization(String imagePath) {
 
 ### 3. 用户体验优化
 ```java
-// 显示处理进度
+// 使用实时进度回调显示处理进度（推荐）
 private void upscaleImageWithProgress(String imagePath) {
-    // 显示进度对话框
-    ProgressDialog progressDialog = new ProgressDialog(this);
-    progressDialog.setMessage("正在处理图像，请稍候...");
-    progressDialog.setCancelable(false);
-    progressDialog.show();
+    // 显示进度标签
+    textProgressLabel.setVisibility(View.VISIBLE);
+    textProgressLabel.setText("降噪中(0.00%)");
     
     executorService.execute(() -> {
         long startTime = System.currentTimeMillis();
         
         ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-            imagePath, false, 0.75f, true
+            imagePath,
+            false,
+            0.75f,
+            true,
+            (Float progress) -> {
+                // 实时更新进度
+                runOnUiThread(() -> {
+                    textProgressLabel.setText(String.format("降噪中(%.2f%%)", progress));
+                });
+                return null;
+            }
         );
         
         long processingTime = System.currentTimeMillis() - startTime;
         
         runOnUiThread(() -> {
-            progressDialog.dismiss();
+            // 隐藏进度标签
+            textProgressLabel.setVisibility(View.GONE);
             
             if (result.getSuccess()) {
                 imageView.setImageBitmap(result.getOutputBitmap());
@@ -557,7 +653,7 @@ private void upscaleImageWithProgress(String imagePath) {
 
 ### 4. 批量处理
 ```java
-// 批量处理多张图像
+// 批量处理多张图像（带进度回调）
 private void batchUpscaleImages(List<String> imagePaths) {
     executorService.execute(() -> {
         int total = imagePaths.size();
@@ -565,8 +661,21 @@ private void batchUpscaleImages(List<String> imagePaths) {
         
         for (String imagePath : imagePaths) {
             try {
+                final int currentIndex = completed + 1;
+                
                 ImageUpscaler.UpscaleResult result = imageUpscaler.upscaleImageBlocking(
-                    imagePath, true, 0.75f, true
+                    imagePath,
+                    true,
+                    0.75f,
+                    true,
+                    (Float progress) -> {
+                        // 显示当前图像的处理进度
+                        runOnUiThread(() -> {
+                            statusText.setText(String.format("处理中 %d/%d (%.2f%%)", 
+                                currentIndex, total, progress));
+                        });
+                        return null;
+                    }
                 );
                 
                 completed++;
@@ -615,6 +724,13 @@ private void batchUpscaleImages(List<String> imagePaths) {
 ---
 
 ## 版本历史
+
+### 版本 1.5.0 (2025年11月19日)
+
+- 新增进度回调功能，支持实时进度更新
+- 平滑的初始化阶段进度（0%-25%），使用随机间隔和步长
+- 真实的处理阶段进度（25%-100%），基于瓦片处理进度
+- 改善用户体验，提供即时反馈
 
 ### 版本 1.4.0 (2025年11月11日)
 
