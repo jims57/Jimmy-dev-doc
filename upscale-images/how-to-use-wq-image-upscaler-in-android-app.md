@@ -732,7 +732,7 @@ private void batchUpscaleImages(List<String> imagePaths) {
 - 真实的处理阶段进度（25%-100%），基于瓦片处理进度
 - 改善用户体验，提供即时反馈
 
-### 版本 1.5.0 (2025年11月11日)
+### 版本 1.4.0 (2025年11月11日)
 
 - 加入安全验证，保证此SDK只能在特定package中使用
 
