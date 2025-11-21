@@ -1,122 +1,154 @@
-# 如何在Android应用中使用wqvideostabilizer-1.2.3.aar库
+# 如何在iOS应用中使用WQVideoStabilizer.xcframework库
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年11月4日*
+*最后更新：2025年11月21日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】视频稳定AAR库（wqvideostabilizer-1.2.3.aar），该库基于FFmpeg和OpenCV技术（如LK光流算法、 GFTT算法、 PFM算法等）提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频稳定XCFramework库（WQVideoStabilizer.xcframework），该库基于FFmpeg和vidstab技术提供强大的视频稳定功能。
 
 ## 目录
 
 1. [库简介](#库简介)
 2. [系统要求](#系统要求)
-3. [获取AAR库](#获取aar库)
+3. [获取XCFramework库](#获取xcframework库)
 4. [项目集成步骤](#项目集成步骤)
 5. [权限配置](#权限配置)
 6. [基础使用方法](#基础使用方法)
 7. [高级功能](#高级功能)
 8. [常见问题解答](#常见问题解答)
 9. [最佳实践](#最佳实践)
+10. [技术细节](#技术细节)
 
 ## 库简介
 
-wqvideostabilizer是一个专为Android开发的视频稳定AAR库，具有以下特点：
+WQVideoStabilizer是一个专为iOS开发的视频稳定XCFramework库，具有以下特点：
 
-- **FFmpeg + OpenCV**：基于FFmpeg视频处理和OpenCV计算机视觉技术（如LK光流算法、GFTT特征检测、PFM算法等）
-- **三种稳定模式**：轻度、中度、激进三种模式适应不同场景
-- **实时进度反馈**：帧级别的处理进度回调
-- **自包含设计**：包含所有依赖，无需额外配置
-- **Java友好**：纯Java API，简化集成
-- **中文支持**：完整的中文API文档和错误信息
+- **FFmpeg + vidstab**：基于FFmpeg视频处理和vidstab视频稳定技术
+- **动态框架**：使用动态库架构，支持代码共享和扩展
+- **多架构支持**：支持arm64和arm64e架构（iPhone真机）
+- **Objective-C/Swift兼容**：可在Objective-C和Swift项目中使用
+- **完整依赖**：包含所有FFmpeg依赖框架
+- **生产就绪**：经过测试的稳定API
 
 ## 系统要求
 
-- **最低Android版本**：API 21 (Android 5.0)
+- **最低iOS版本**：iOS 13.0
+- **支持架构**：arm64, arm64e（iPhone真机）
+- **Xcode版本**：Xcode 12.0或更高
+- **开发语言**：Objective-C或Swift
 - **推荐内存**：至少2GB可用内存
-- **存储空间**：约20MB（包含FFmpeg库）
-- **处理器**：支持arm64-v8a架构
+- **存储空间**：约150MB（包含所有FFmpeg框架）
 
-## 获取AAR库
+## 获取XCFramework库
 
 ### 方式一：从构建输出获取
 ```bash
-# AAR库文件位置
-/Users/mac/Documents/GitHub/video-stabilization-by-opencv/my-info/build_aar_for_android/android-output/wqvideostabilizer-1.2.3.aar
+# XCFramework库文件位置
+/Users/mac/Documents/GitHub/ios_use_cpp_demo/my-info/build_ios_xcframework/xcframework-output/WQVideoStabilizer.xcframework
+
+# FFmpeg依赖框架位置
+/Users/mac/Documents/GitHub/ffmpeg-kit/prebuilt/bundle-apple-xcframework-ios/
 ```
 
 ### 方式二：自行构建
 ```bash
-cd /Users/mac/Documents/GitHub/android_use_cpp/my-info/build_android_aar
-./build_android_aar_for_video_stabilization.sh
+cd /Users/mac/Documents/GitHub/ios_use_cpp_demo/my-info/build_ios_xcframework
+./build_ios_xcframework_for_video_stabilization.sh
 ```
+
+构建完成后，所有XCFramework会自动复制到iOS项目目录。
 
 ## 项目集成步骤
 
-### 第1步：复制AAR文件
+### 第1步：复制XCFramework文件
 
-将AAR文件复制到您的Android项目中：
-
-```bash
-# 创建libs目录（如果不存在）
-mkdir -p /path/to/your/android/project/app/libs
-
-# 复制AAR文件
-cp wqvideostabilizer-1.2.3.aar /path/to/your/android/project/app/libs/
-```
-
-### 第2步：配置build.gradle.kts
-
-在您的`app/build.gradle.kts`文件中添加以下依赖：
-
-```kotlin
-dependencies {
-    // 视频稳定AAR库（自包含所有依赖）
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
-    
-    // 其他现有依赖...
-}
-```
-
-**重要提示：** AAR已包含所有必需的依赖（FFmpeg、smart-exception），无需额外添加。
-
-### 第3步：同步项目
-
-点击Android Studio的"Sync Now"按钮，或运行：
+将所有XCFramework文件复制到您的iOS项目中：
 
 ```bash
-./gradlew sync
+# 复制到您的iOS项目目录
+cp -R WQVideoStabilizer.xcframework /path/to/your/ios/project/
+cp -R ffmpegkit.xcframework /path/to/your/ios/project/
+cp -R libavcodec.xcframework /path/to/your/ios/project/
+cp -R libavdevice.xcframework /path/to/your/ios/project/
+cp -R libavfilter.xcframework /path/to/your/ios/project/
+cp -R libavformat.xcframework /path/to/your/ios/project/
+cp -R libavutil.xcframework /path/to/your/ios/project/
+cp -R libswresample.xcframework /path/to/your/ios/project/
+cp -R libswscale.xcframework /path/to/your/ios/project/
 ```
+
+**重要：** 必须复制所有9个XCFramework文件，WQVideoStabilizer依赖所有FFmpeg框架。
+
+### 第2步：在Xcode中添加XCFramework
+
+1. 在Xcode中打开您的项目
+2. 选择项目文件（.xcodeproj）
+3. 选择您的Target
+4. 点击"General"标签页
+5. 滚动到"Frameworks, Libraries, and Embedded Content"部分
+6. 点击"+"按钮
+7. 点击"Add Other..." -> "Add Files..."
+8. 选择所有9个XCFramework文件
+
+### 第3步：配置为"Embed & Sign"（关键步骤）
+
+**非常重要：** 由于这些是动态框架，必须设置为"Embed & Sign"。
+
+在"Frameworks, Libraries, and Embedded Content"中，将所有XCFramework的嵌入方式设置为**"Embed & Sign"**：
+
+- WQVideoStabilizer.xcframework -> **Embed & Sign**
+- ffmpegkit.xcframework -> **Embed & Sign**
+- libavcodec.xcframework -> **Embed & Sign**
+- libavdevice.xcframework -> **Embed & Sign**
+- libavfilter.xcframework -> **Embed & Sign**
+- libavformat.xcframework -> **Embed & Sign**
+- libavutil.xcframework -> **Embed & Sign**
+- libswresample.xcframework -> **Embed & Sign**
+- libswscale.xcframework -> **Embed & Sign**
+
+**为什么必须是Embed & Sign？**
+- 这些是动态库（.dylib），不是静态库（.a）
+- 动态库必须嵌入到app bundle中才能运行
+- 如果只设置为"Do Not Embed"，应用在真机上会崩溃
+
+### 第4步：验证配置
+
+构建项目（Command+B），确保没有错误。如果出现链接错误，请检查：
+
+1. 所有9个XCFramework都已添加
+2. 所有框架都设置为"Embed & Sign"
+3. 框架路径正确
 
 ## 权限配置
 
-在`AndroidManifest.xml`中添加必要的权限：
+在`Info.plist`中添加必要的权限说明：
 
 ```xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="your.package.name">
-    
-    <!-- 读取外部存储权限（读取视频文件） -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    
-    <!-- 写入外部存储权限（保存稳定后的视频） -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    
-    <application
-        ...>
-        ...
-    </application>
-</manifest>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>我们需要访问您的照片库来选择需要稳定的视频</string>
+
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>我们需要保存稳定后的视频到您的照片库</string>
+
+<key>NSCameraUsageDescription</key>
+<string>我们需要访问相机来录制视频</string>
 ```
+
+**或者在Xcode中配置：**
+
+1. 选择项目 -> Target -> Info
+2. 添加以下条目：
+   - Privacy - Photo Library Usage Description
+   - Privacy - Photo Library Additions Usage Description
+   - Privacy - Camera Usage Description
 
 ## 基础使用方法
 
-### Java实现（推荐）
+### Objective-C实现
 
-```java
-import cn.watchfun.videostabilizer.WQVideoStabilizer;
-import cn.watchfun.videostabilizer.StabilizationMode;
-import cn.watchfun.videostabilizer.ProgressCallback;
-import cn.watchfun.videostabilizer.VideoInfo;
+```objc
+#import <WQVideoStabilizer/WQVideoStabilizer.h>
+#import <WQVideoStabilizer/ios_file_wrapper.h>
 
 public class MainActivity extends AppCompatActivity {
     private WQVideoStabilizer videoStabilizer;
