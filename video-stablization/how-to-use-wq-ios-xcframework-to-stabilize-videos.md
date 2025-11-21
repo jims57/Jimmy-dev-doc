@@ -24,6 +24,7 @@
 WQVideoStabilizer是一个专为iOS开发的视频稳定XCFramework库，具有以下特点：
 
 - **先进算法**：基于业界领先的视频处理和稳定算法
+- **自动格式转换**：内置FFmpeg支持，自动处理各种视频格式转换
 - **动态框架**：使用动态库架构，支持代码共享和扩展
 - **多架构支持**：支持arm64和arm64e架构（iPhone真机）
 - **Objective-C/Swift兼容**：可在Objective-C和Swift项目中使用
@@ -98,15 +99,15 @@ cp -R libswscale.xcframework /path/to/your/ios/project/
 
 在"Frameworks, Libraries, and Embedded Content"中，将所有XCFramework的嵌入方式设置为**"Embed & Sign"**：
 
-- ✅ WQVideoStabilizer.xcframework -> **Embed & Sign**
-- ✅ ffmpegkit.xcframework -> **Embed & Sign**
-- ✅ libavcodec.xcframework -> **Embed & Sign**
-- ✅ libavdevice.xcframework -> **Embed & Sign**
-- ✅ libavfilter.xcframework -> **Embed & Sign**
-- ✅ libavformat.xcframework -> **Embed & Sign**
-- ✅ libavutil.xcframework -> **Embed & Sign**
-- ✅ libswresample.xcframework -> **Embed & Sign**
-- ✅ libswscale.xcframework -> **Embed & Sign**
+-  WQVideoStabilizer.xcframework -> **Embed & Sign**
+-  ffmpegkit.xcframework -> **Embed & Sign**
+-  libavcodec.xcframework -> **Embed & Sign**
+-  libavdevice.xcframework -> **Embed & Sign**
+-  libavfilter.xcframework -> **Embed & Sign**
+-  libavformat.xcframework -> **Embed & Sign**
+-  libavutil.xcframework -> **Embed & Sign**
+-  libswresample.xcframework -> **Embed & Sign**
+-  libswscale.xcframework -> **Embed & Sign**
 
 **为什么必须是Embed & Sign？**
 - 这些是动态库（.dylib），不是静态库（.a）
@@ -336,7 +337,89 @@ class ViewController: UIViewController {
 
 ## API参考
 
-### WQVideoStabilizerImpl类
+### C API（推荐使用）
+
+WQVideoStabilizer提供了C语言API，支持三种预设稳定模式：
+
+#### 稳定视频（预设模式）
+
+```objc
+#import <WQVideoStabilizer/WQVideoStabilizer.h>
+
+// 稳定视频 - 使用预设模式（推荐使用）
+// 自动处理格式转换，支持任何格式：MP4, AVI, MOV, MKV等
+int wq_stabilize_video(const char *input_path,
+                       const char *output_path,
+                       int mode,  // 0=轻度, 1=中度, 2=强力
+                       void (*progress_callback)(int stage, int current, int total, float percentage, const char *message));
+```
+
+**参数：**
+- `input_path`: 输入视频文件路径（支持任何FFmpeg支持的格式）
+- `output_path`: 输出视频文件路径（输出为MP4格式）
+- `mode`: 稳定模式
+  - `0` - 轻度稳定（适合轻微抖动）
+  - `1` - 中度稳定（适合一般抖动）
+  - `2` - 强力稳定（适合严重抖动）
+- `progress_callback`: 进度回调函数（可选，传NULL表示不需要进度）
+
+**返回值：**
+- `0` - 成功
+- 非0 - 失败
+
+**重要特性：**
+- ✅ **自动格式转换**：XCFramework会自动检测输入格式并在需要时转换
+- ✅ **支持多种格式**：MP4, AVI, MOV, MKV等所有FFmpeg支持的格式
+- ✅ **无需手动转换**：iOS开发者不需要关心格式转换细节
+- ✅ **临时文件管理**：自动创建和清理临时文件
+
+**进度回调函数：**
+```objc
+void progressCallback(int stage, int current, int total, float percentage, const char *message) {
+    // stage: 处理阶段 (1=检测, 2=变换, 3=完成)
+    // current: 当前进度
+    // total: 总进度
+    // percentage: 百分比 (0.0-100.0)
+    // message: 状态消息
+}
+```
+
+#### 使用示例
+
+```objc
+#import <WQVideoStabilizer/WQVideoStabilizer.h>
+
+// 进度回调函数
+void myProgressCallback(int stage, int current, int total, float percentage, const char *msg) {
+    NSLog(@"阶段 %d: %.1f%% - %s", stage, percentage, msg);
+}
+
+// 稳定视频
+- (void)stabilizeVideoWithMode:(int)mode {
+    NSString *inputPath = [[NSBundle mainBundle] pathForResource:@"shaky_video" ofType:@"mp4"];
+    NSString *outputPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"stabilized.mp4"];
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // 调用C API
+        int result = wq_stabilize_video(
+            [inputPath UTF8String],
+            [outputPath UTF8String],
+            mode,  // 0=轻度, 1=中度, 2=强力
+            myProgressCallback  // 或传NULL
+        );
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (result == 0) {
+                NSLog(@"视频稳定成功");
+            } else {
+                NSLog(@"视频稳定失败，错误代码: %d", result);
+            }
+        });
+    });
+}
+```
+
+### WQVideoStabilizerImpl类（Objective-C包装）
 
 #### 初始化
 
@@ -368,6 +451,8 @@ func stabilizeVideo(_ inputPath: String, outputPath: String) throws -> Bool
 **返回值：**
 - 成功返回`YES`/`true`
 - 失败返回`NO`/`false`，并通过error参数返回错误信息
+
+**注意：** 此方法使用默认的中度稳定模式。如需选择其他模式，请使用C API。
 
 #### 获取视频总帧数
 
@@ -424,9 +509,12 @@ Reason: image not found
 ### Q3: 支持哪些视频格式？
 
 **A:**
-- **输入格式**: MP4, MOV, AVI, MKV等FFmpeg支持的格式
+- **输入格式**: MP4, MOV, AVI, MKV等所有FFmpeg支持的格式
+  - XCFramework会自动检测并转换不兼容的编解码器
+  - 支持HEVC, H.264, MJPEG等各种编解码器
 - **输出格式**: MP4 (H.264编码)
 - **音频**: AAC编码
+- **自动转换**: 如果输入格式不适合稳定处理，会自动转换为H.264
 
 ### Q4: 处理大视频时如何避免内存问题？
 
@@ -440,7 +528,40 @@ Reason: image not found
 
 **A:** 这些XCFramework只包含真机架构（arm64, arm64e），不包含模拟器架构（x86_64, arm64-simulator）。必须在真机上测试。
 
-### Q6: 如何处理iOS沙盒限制？
+### Q6: 如何处理不同的视频格式？
+
+**A:** XCFramework已经内置了格式转换功能，iOS开发者无需手动处理：
+
+```objc
+// 直接使用任何格式的视频，XCFramework会自动处理
+int result = wq_stabilize_video(
+    [inputPath UTF8String],  // 可以是 .mp4, .avi, .mov, .mkv 等
+    [outputPath UTF8String], // 输出总是 .mp4
+    mode,
+    progressCallback
+);
+```
+
+**内部处理流程：**
+1. 检测输入视频的编解码器
+2. 如果需要，自动转换为H.264编码
+3. 执行视频稳定处理
+4. 输出MP4格式的稳定视频
+5. 自动清理临时文件
+
+**注意：** 如果需要在AVPlayer中播放原始视频进行对比，非MP4格式需要单独转换：
+
+```objc
+// 为播放对比准备原始视频
+NSString *inputExt = [[inputPath pathExtension] lowercaseString];
+if (![inputExt isEqualToString:@"mp4"]) {
+    // 使用 XCFramework 转换为 MP4 以便 AVPlayer 播放
+    int convertResult = wq_convert_to_mp4([inputPath UTF8String], 
+                                          [originalMP4Path UTF8String]);
+}
+```
+
+### Q7: 如何处理iOS沙盒限制？
 
 **A:** iOS沙盒会限制文件访问。建议：
 
@@ -596,6 +717,13 @@ Xcode会自动设置正确的rpath：
 ---
 
 **版本历史:**
+
+- **v1.1.0** (2025-11-21)
+  - ✨ 新增：自动格式转换功能
+  - ✨ 新增：支持AVI, MOV, MKV等多种输入格式
+  - ✨ 改进：简化iOS开发者使用流程
+  - ✨ 改进：自动管理临时文件
+  - 📝 更新：文档说明格式转换功能
 
 - **v1.0.0** (2025-11-21)
   - 初始iOS版本发布
