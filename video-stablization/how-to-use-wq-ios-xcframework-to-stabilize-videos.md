@@ -4,7 +4,7 @@
 
 *最后更新：2025年11月21日*
 
-本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频稳定XCFramework库（WQVideoStabilizer.xcframework），该库基于先进的视频处理技术提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频防抖XCFramework库（WQVideoStabilizer.xcframework），该库基于先进的视频处理技术提供强大的视频防抖功能。
 
 ## 目录
 
@@ -21,7 +21,7 @@
 
 ## 库简介
 
-WQVideoStabilizer是一个专为iOS开发的视频稳定XCFramework库，具有以下特点：
+WQVideoStabilizer是一个专为iOS开发的视频防抖XCFramework库，具有以下特点：
 
 - **先进算法**：基于业界领先的视频处理和稳定算法
 - **自动格式转换**：内置FFmpeg支持，自动处理各种视频格式转换
@@ -163,7 +163,7 @@ cp -R libswscale.xcframework /path/to/your/ios/project/
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 初始化视频稳定器
+    // 初始化视频防抖器
     self.videoStabilizer = [[WQVideoStabilizerImpl alloc] init];
 }
 
@@ -180,10 +180,10 @@ cp -R libswscale.xcframework /path/to/your/ios/project/
         
         dispatch_async(dispatch_get_main_queue(), ^{
             if (success) {
-                NSLog(@"视频稳定成功: %@", outputPath);
-                [self showAlert:@"成功" message:@"视频稳定完成"];
+                NSLog(@"视频防抖成功: %@", outputPath);
+                [self showAlert:@"成功" message:@"视频防抖完成"];
             } else {
-                NSLog(@"视频稳定失败: %@", error.localizedDescription);
+                NSLog(@"视频防抖失败: %@", error.localizedDescription);
                 [self showAlert:@"失败" message:error.localizedDescription];
             }
         });
@@ -233,15 +233,15 @@ class ViewController: UIViewController {
                 
                 DispatchQueue.main.async {
                     if success {
-                        print("视频稳定成功: \(outputPath)")
-                        self.showAlert(title: "成功", message: "视频稳定完成")
+                        print("视频防抖成功: \(outputPath)")
+                        self.showAlert(title: "成功", message: "视频防抖完成")
                     } else {
-                        self.showAlert(title: "失败", message: "视频稳定失败")
+                        self.showAlert(title: "失败", message: "视频防抖失败")
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
-                    print("视频稳定出错: \(error.localizedDescription)")
+                    print("视频防抖出错: \(error.localizedDescription)")
                     self.showAlert(title: "错误", message: error.localizedDescription)
                 }
             }
@@ -273,7 +273,7 @@ class ViewController: UIViewController {
     // 初始化UI
     [self setupUI];
     
-    // 初始化视频稳定器
+    // 初始化视频防抖器
     self.videoStabilizer = [[WQVideoStabilizerImpl alloc] init];
 }
 
@@ -410,9 +410,9 @@ void myProgressCallback(int stage, int current, int total, float percentage, con
         
         dispatch_async(dispatch_get_main_queue(), ^{
             if (result == 0) {
-                NSLog(@"视频稳定成功");
+                NSLog(@"视频防抖成功");
             } else {
-                NSLog(@"视频稳定失败，错误代码: %d", result);
+                NSLog(@"视频防抖失败，错误代码: %d", result);
             }
         });
     });
@@ -545,7 +545,7 @@ int result = wq_stabilize_video(
 **内部处理流程：**
 1. 检测输入视频的编解码器
 2. 如果需要，自动转换为H.264编码
-3. 执行视频稳定处理
+3. 执行视频防抖处理
 4. 输出MP4格式的稳定视频
 5. 自动清理临时文件
 
@@ -677,7 +677,7 @@ WQVideoStabilizer.xcframework
 ├── libavformat.xcframework
 │   ├── libavcodec.xcframework
 │   └── libavutil.xcframework
-├── libavfilter.xcframework (视频稳定滤镜)
+├── libavfilter.xcframework (视频防抖滤镜)
 │   ├── libavcodec.xcframework
 │   └── libavutil.xcframework
 ├── libswscale.xcframework
@@ -727,7 +727,7 @@ Xcode会自动设置正确的rpath：
 
 - **v1.0.0** (2025-11-21)
   - 初始iOS版本发布
-  - 基于先进的视频稳定算法
+  - 基于先进的视频防抖算法
   - 动态XCFramework架构
   - 支持arm64/arm64e架构
   - 完整的Objective-C/Swift API
