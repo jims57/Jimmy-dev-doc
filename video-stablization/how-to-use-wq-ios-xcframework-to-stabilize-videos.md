@@ -4,7 +4,7 @@
 
 *最后更新：2025年11月21日*
 
-本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频稳定XCFramework库（WQVideoStabilizer.xcframework），该库基于FFmpeg和vidstab技术提供强大的视频稳定功能。
+本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频稳定XCFramework库（WQVideoStabilizer.xcframework），该库基于先进的视频处理技术提供强大的视频稳定功能。
 
 ## 目录
 
@@ -23,7 +23,7 @@
 
 WQVideoStabilizer是一个专为iOS开发的视频稳定XCFramework库，具有以下特点：
 
-- **FFmpeg + vidstab**：基于FFmpeg视频处理和vidstab视频稳定技术
+- **先进算法**：基于业界领先的视频处理和稳定算法
 - **动态框架**：使用动态库架构，支持代码共享和扩展
 - **多架构支持**：支持arm64和arm64e架构（iPhone真机）
 - **Objective-C/Swift兼容**：可在Objective-C和Swift项目中使用
@@ -413,7 +413,7 @@ Reason: image not found
 - **ffmpegkit**: FFmpeg主框架
 - **libavcodec**: 编解码器
 - **libavformat**: 格式处理
-- **libavfilter**: 滤镜（包括vidstab）
+- **libavfilter**: 视频滤镜处理
 - **libavutil**: 工具函数
 - **libavdevice**: 设备支持
 - **libswscale**: 图像缩放
@@ -556,7 +556,7 @@ WQVideoStabilizer.xcframework
 ├── libavformat.xcframework
 │   ├── libavcodec.xcframework
 │   └── libavutil.xcframework
-├── libavfilter.xcframework (包含vidstab)
+├── libavfilter.xcframework (视频稳定滤镜)
 │   ├── libavcodec.xcframework
 │   └── libavutil.xcframework
 ├── libswscale.xcframework
@@ -599,7 +599,7 @@ Xcode会自动设置正确的rpath：
 
 - **v1.0.0** (2025-11-21)
   - 初始iOS版本发布
-  - 基于FFmpeg + vidstab
+  - 基于先进的视频稳定算法
   - 动态XCFramework架构
   - 支持arm64/arm64e架构
   - 完整的Objective-C/Swift API
