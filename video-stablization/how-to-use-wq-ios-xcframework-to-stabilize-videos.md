@@ -2,7 +2,7 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年11月21日*
+*最后更新：2025年11月22日*
 
 本指南将详细介绍如何从零开始在iOS项目中集成和使用【沃奇】视频防抖XCFramework库（WQVideoStabilizer.xcframework），该库基于先进的视频处理技术提供强大的视频防抖功能。
 
@@ -350,7 +350,7 @@ WQVideoStabilizer提供了C语言API，支持三种预设稳定模式：
 int wq_stabilize_video(const char *input_path,
                        const char *output_path,
                        int mode,  // 0=轻度, 1=中度, 2=强力
-                       void (*progress_callback)(int stage, int current, int total, float percentage, const char *message));
+                       void (*progress_callback)(int stage, int current, int total, float percentage, const char *message, const char *original_video_path));
 ```
 
 **参数：**
@@ -374,12 +374,13 @@ int wq_stabilize_video(const char *input_path,
 
 **进度回调函数：**
 ```objc
-void progressCallback(int stage, int current, int total, float percentage, const char *message) {
+void progressCallback(int stage, int current, int total, float percentage, const char *message, const char *original_video_path) {
     // stage: 处理阶段 (1=检测, 2=变换, 3=完成)
     // current: 当前进度
     // total: 总进度
     // percentage: 百分比 (0.0-100.0)
     // message: 状态消息
+    // original_video_path: 原始视频的绝对路径
 }
 ```
 
@@ -389,8 +390,9 @@ void progressCallback(int stage, int current, int total, float percentage, const
 #import <WQVideoStabilizer/WQVideoStabilizer.h>
 
 // 进度回调函数
-void myProgressCallback(int stage, int current, int total, float percentage, const char *msg) {
-    NSLog(@"阶段 %d: %.1f%% - %s", stage, percentage, msg);
+void myProgressCallback(int stage, int current, int total, float percentage, const char *msg, const char *original_video_path) {
+    NSString *originalPath = original_video_path ? [NSString stringWithUTF8String:original_video_path] : @"";
+    NSLog(@"阶段 %d: %.1f%% - %s (原始视频: %@)", stage, percentage, msg, originalPath);
 }
 
 // 稳定视频
@@ -716,6 +718,11 @@ Xcode会自动设置正确的rpath：
 ---
 
 **版本历史:**
+
+- **v1.8.1** (2025-11-22)
+  -  新增：进度回调函数新增`original_video_path`参数
+  -  改进：回调函数现在可以获取原始视频的绝对路径
+  -  更新：所有API文档和示例代码
 
 - **v1.8.0** (2025-11-21)
   -  新增：自动格式转换功能
