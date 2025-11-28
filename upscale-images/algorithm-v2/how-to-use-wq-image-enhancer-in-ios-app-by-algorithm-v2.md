@@ -9,11 +9,11 @@
 
 WQImageEnhancer是专为iOS开发的图像降噪增强库：
 
-- **高性能处理**：优化算法，240x240图像约22ms完成
+- **高性能处理**：优化算法，240x240图像约19ms完成
 - **多种降噪方法**：双边滤波、快速非局部均值、BM3D
 - **边缘保持**：降噪同时保持边缘清晰
 - **锐化增强**：可选Unsharp Mask锐化
-- **静态框架**：减小应用体积
+- **单一动态框架**：仅需一个XCFramework，体积约6.7MB
 
 ## 系统要求
 
@@ -25,15 +25,13 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
 
 ### 第1步：添加框架
 
-将以下框架拖入Xcode项目：
+将框架拖入Xcode项目：
 - `WQImageEnhancer.xcframework`
-- `opencv2.framework`
 
 ### 第2步：配置嵌入方式
 
 在 General → Frameworks, Libraries, and Embedded Content：
-- `WQImageEnhancer.xcframework` → **Do Not Embed**（静态库）
-- `opencv2.framework` → **Embed & Sign**（动态库）
+- `WQImageEnhancer.xcframework` → **Embed & Sign**（动态库）
 
 ## 基础使用
 
@@ -146,7 +144,12 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
 
 ## 版本历史
 
-### v2.0.0 (2025-11-28)
+### v1.1.0 (2025-11-28)
+- 改为单一动态XCFramework，体积仅6.7MB
+- 无需单独添加依赖库
+- 简化集成流程
+
+### v1.0.0 (2025-11-28)
 - 全新高性能图像处理引擎
 - 支持多种降噪算法
 - C/C++风格API
