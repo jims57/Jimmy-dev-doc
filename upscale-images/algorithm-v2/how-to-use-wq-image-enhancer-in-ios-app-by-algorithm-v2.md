@@ -3,7 +3,7 @@
 *作者：Jimmy Gan*
 *最后更新：2025年11月28日*
 
-本指南介绍如何在iOS项目中集成WQImageEnhancer.xcframework图像降噪增强库。
+本指南介绍如何在iOS项目中集成【沃奇】WQImageEnhancer.xcframework图像降噪增强库。
 
 ## 库简介
 
