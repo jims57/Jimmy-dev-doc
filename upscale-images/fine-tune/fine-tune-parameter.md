@@ -3,13 +3,13 @@
 ## 默认参数值
 
 ```java
-int bilateralD = 9;              // 范围: 5-15
+int bilateralD = 8;              // 范围: 5-15（经Jimmy测试对比，发现8最平均速度和效果。建议：8）
 double bilateralSigmaColor = 50.0; // 范围: 10-150
 double bilateralSigmaSpace = 50.0; // 范围: 10-150
-int bilateralIterations = 3;     // 范围: 1-4
+int bilateralIterations = 2;     // 范围: 1-4 （建议：2。经测试，发现2和3，差别不大。而且2的时间更短）
 double unsharpSigma = 1.0;       // 范围: 0.5-3.0
 double unsharpAmount = 1.5;      // 范围: 0.5-3.0
-boolean isDebug = false;         // 调试模式
+boolean isDebug = false;         // 调试模式（如果你更多日志，可以设置为true）
 ```
 
 ---
@@ -26,7 +26,6 @@ boolean isDebug = false;         // 调试模式
 | 5 | 最快，轻度降噪 |
 | 9 | 平衡速度和效果(推荐) |
 | 15 | 最慢，强力降噪 |
-| -1 | 根据sigmaSpace自动计算 |
 
 ### bilateralSigmaColor (颜色sigma)
 
