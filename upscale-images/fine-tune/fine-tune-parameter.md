@@ -1,169 +1,169 @@
-# OpenCV Image Enhancement Parameters
+# OpenCV 图像增强参数说明
 
-Reference: https://www.projectpro.io/recipes/remove-noise-from-images-opencv
+参考: https://www.projectpro.io/recipes/remove-noise-from-images-opencv
 
-## Default Parameter Values
+## 默认参数值
 
 ```java
-int bilateralD = 9;              // Range: 5-15
-double bilateralSigmaColor = 50.0; // Range: 10-150
-double bilateralSigmaSpace = 50.0; // Range: 10-150
-int bilateralIterations = 3;     // Range: 1-4
-double unsharpSigma = 1.0;       // Range: 0.5-3.0
-double unsharpAmount = 1.5;      // Range: 0.5-3.0
-boolean isDebug = false;         // Debug mode
+int bilateralD = 9;              // 范围: 5-15
+double bilateralSigmaColor = 50.0; // 范围: 10-150
+double bilateralSigmaSpace = 50.0; // 范围: 10-150
+int bilateralIterations = 3;     // 范围: 1-4
+double unsharpSigma = 1.0;       // 范围: 0.5-3.0
+double unsharpAmount = 1.5;      // 范围: 0.5-3.0
+boolean isDebug = false;         // 调试模式
 ```
 
 ---
 
-## 1. BILATERAL Filter Parameters
+## 1. BILATERAL 双边滤波参数
 
-Goal: Strong denoising + preserve texture details (avoid skin-smoothing) + ~1s processing time
+目标: 强降噪 + 保留纹理细节(避免磨皮效果) + 处理时间约1秒
 
-### bilateralD (Filter Diameter)
+### bilateralD (滤波直径)
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 5-15, Recommended: **9** |
-| 5 | Fastest, light denoising |
-| 9 | Balanced speed and effect (recommended) |
-| 15 | Slowest, strong denoising |
-| -1 | Auto-calculate based on sigmaSpace |
+| **范围** | 5-15, 推荐: **9** |
+| 5 | 最快，轻度降噪 |
+| 9 | 平衡速度和效果(推荐) |
+| 15 | 最慢，强力降噪 |
+| -1 | 根据sigmaSpace自动计算 |
 
-### bilateralSigmaColor (Color Sigma)
+### bilateralSigmaColor (颜色sigma)
 
-Controls color similarity threshold - determines which pixels get blended.
+控制颜色相似度阈值 - 决定哪些像素会被混合。
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 10-150, Recommended: **50** |
-| 10-30 | Preserve texture, light denoising |
-| 50-75 | Balanced denoising and texture (recommended) |
-| 100-150 | Strong denoising, may cause skin-smoothing |
+| **范围** | 10-150, 推荐: **50** |
+| 10-30 | 保留纹理，轻度降噪 |
+| 50-75 | 平衡降噪和纹理(推荐) |
+| 100-150 | 强力降噪，可能磨皮 |
 
-- **Smaller**: Only blend very similar colors, preserve more texture
-- **Larger**: Blend more color differences, stronger denoising but may cause buffing
+- **越小**: 只混合颜色非常相似的像素，保留更多纹理细节
+- **越大**: 混合更多颜色差异的像素，降噪更强但可能磨皮
 
-### bilateralSigmaSpace (Space Sigma)
+### bilateralSigmaSpace (空间sigma)
 
-Controls spatial distance influence - determines how far pixels participate in calculation.
+控制空间距离的影响范围 - 决定多远的像素会参与计算。
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 10-150, Recommended: **50** |
-| 10-30 | Local denoising, preserve details |
-| 50-75 | Balanced (recommended) |
-| 100-150 | Global smoothing, may lose details |
+| **范围** | 10-150, 推荐: **50** |
+| 10-30 | 局部降噪，保留细节 |
+| 50-75 | 平衡(推荐) |
+| 100-150 | 全局平滑，可能丢失细节 |
 
-- **Smaller**: Only consider nearby pixels, local denoising
-- **Larger**: Consider farther pixels, smoother global effect
+- **越小**: 只考虑非常近的像素，局部降噪
+- **越大**: 考虑更远的像素，全局降噪效果更平滑
 
-### bilateralIterations (Iterations)
+### bilateralIterations (迭代次数)
 
-Multiple light passes are better than one heavy pass.
+多次轻度滤波比一次强滤波效果更好。
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 1-4, Recommended: **3** |
-| 1 | Fastest, single pass |
-| 2-3 | Balanced (recommended) |
-| 4 | Strongest denoising, may over-smooth |
+| **范围** | 1-4, 推荐: **3** |
+| 1 | 最快，单次滤波 |
+| 2-3 | 平衡(推荐) |
+| 4 | 最强降噪，但可能过度平滑 |
 
 ---
 
-## 2. Unsharp Mask Parameters (Sharpening)
+## 2. Unsharp Mask 锐化参数
 
-### unsharpSigma (Gaussian Sigma)
+### unsharpSigma (高斯sigma)
 
-Controls blur radius, affects sharpening "coarseness".
+控制模糊半径，影响锐化的"粗细"。
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 0.5-3.0, Recommended: **1.0** |
-| 0.5-1.0 | Fine sharpening, enhance details |
-| 1.0-2.0 | Medium sharpening (recommended) |
-| 2.0-3.0 | Coarse sharpening, enhance contours |
+| **范围** | 0.5-3.0, 推荐: **1.0** |
+| 0.5-1.0 | 精细锐化，增强细节 |
+| 1.0-2.0 | 中等锐化(推荐) |
+| 2.0-3.0 | 粗糙锐化，增强轮廓 |
 
-- **Smaller**: Finer sharpening (details)
-- **Larger**: Coarser sharpening (contours)
+- **越小**: 锐化越精细(细节)
+- **越大**: 锐化越粗糙(轮廓)
 
-### unsharpAmount (Sharpening Strength)
+### unsharpAmount (锐化强度)
 
-Controls the intensity of sharpening effect.
+控制锐化效果的强度。
 
-| Value | Effect |
+| 值 | 效果 |
 |-------|--------|
-| **Range** | 0.5-3.0, Recommended: **1.5** |
-| 0.5-1.0 | Light sharpening |
-| 1.0-2.0 | Medium sharpening (recommended) |
-| 2.0-3.0 | Strong sharpening, may have halo |
+| **范围** | 0.5-3.0, 推荐: **1.5** |
+| 0.5-1.0 | 轻度锐化 |
+| 1.0-2.0 | 中等锐化(推荐) |
+| 2.0-3.0 | 强力锐化，可能有光晕 |
 
 ---
 
-## 3. Debug Mode (isDebug)
+## 3. 调试模式 (isDebug)
 
-When `isDebug = true`:
+当 `isDebug = true` 时:
 
-1. **File naming**: Includes parameter values in filename
-   - Example: `enhanced_20251203_143109(D9-Color50-Space50-it3-Sigma1-Amount1.5).jpg`
+1. **文件命名**: 文件名包含参数值
+   - 示例: `enhanced_20251203_143109(D9-Color50-Space50-it3-Sigma1-Amount1.5).jpg`
 
-2. **Logcat output**: Detailed parameter logs with format:
+2. **Logcat输出**: 详细参数日志:
    ```
    ============================================================
-   [DEBUG] Image Enhancement Parameters:
-   [DEBUG] Image size: 3000x2250
-   [DEBUG] Denoise method: BILATERAL
-   [DEBUG] Enable sharpening: true
+   [DEBUG] 图像增强参数详情:
+   [DEBUG] 图像尺寸: 3000x2250
+   [DEBUG] 降噪方法: BILATERAL
+   [DEBUG] 启用锐化: true
    ------------------------------------------------------------
-   [DEBUG] BILATERAL Parameters:
-   [DEBUG]   bilateralD = 9 (range 5-15)
-   [DEBUG]   bilateralSigmaColor = 50.0 (range 10-150)
-   [DEBUG]   bilateralSigmaSpace = 50.0 (range 10-150)
-   [DEBUG]   bilateralIterations = 3 (range 1-4)
+   [DEBUG] BILATERAL双边滤波参数:
+   [DEBUG]   bilateralD = 9 (范围5-15)
+   [DEBUG]   bilateralSigmaColor = 50.0 (范围10-150)
+   [DEBUG]   bilateralSigmaSpace = 50.0 (范围10-150)
+   [DEBUG]   bilateralIterations = 3 (范围1-4)
    ------------------------------------------------------------
-   [DEBUG] Unsharp Mask Parameters:
-   [DEBUG]   unsharpSigma = 1.0 (range 0.5-3.0)
-   [DEBUG]   unsharpAmount = 1.5 (range 0.5-3.0)
+   [DEBUG] Unsharp Mask锐化参数:
+   [DEBUG]   unsharpSigma = 1.0 (范围0.5-3.0)
+   [DEBUG]   unsharpAmount = 1.5 (范围0.5-3.0)
    ============================================================
    ```
 
 ---
 
-## 4. Non-Local Means Parameters (FAST_NL_MEANS / BM3D)
+## 4. 非局部均值降噪参数 (FAST_NL_MEANS / BM3D)
 
-| Parameter | Range | Recommended | Description |
+| 参数 | 范围 | 推荐值 | 说明 |
 |-----------|-------|-------------|-------------|
-| h | 3-25 | 20 | Luminance filter strength |
-| hColor | 3-25 | 20 | Color filter strength |
-| templateWindowSize | 3-11 (odd) | 7 | Template window size |
-| searchWindowSize | 11-35 (odd) | 21 | Search window size |
+| h | 3-25 | 20 | 亮度滤波强度 |
+| hColor | 3-25 | 20 | 颜色滤波强度 |
+| templateWindowSize | 3-11 (奇数) | 7 | 模板窗口大小 |
+| searchWindowSize | 11-35 (奇数) | 21 | 搜索窗口大小 |
 
 ---
 
-## 5. CLAHE Parameters (Contrast Enhancement)
+## 5. CLAHE参数 (对比度增强)
 
-| Parameter | Range | Recommended | Description |
+| 参数 | 范围 | 推荐值 | 说明 |
 |-----------|-------|-------------|-------------|
-| clipLimit | 1.0-10.0 | 2.0 | Contrast limit |
-| tileSize | 4-16 | 8 | Tile size |
+| clipLimit | 1.0-10.0 | 2.0 | 对比度限制 |
+| tileSize | 4-16 | 8 | 瓦片大小 |
 
 ---
 
-## Quick Reference
+## 快速参考
 
 ```java
-// In MainActivity.java - enhanceImage() method
+// 在 MainActivity.java 的 enhanceImage() 方法中
 
-// BILATERAL parameters
-int bilateralD = 9;              // 5-15, larger = stronger but slower
-double bilateralSigmaColor = 50.0; // 10-150, smaller = preserve texture
-double bilateralSigmaSpace = 50.0; // 10-150, controls smoothing range
-int bilateralIterations = 3;     // 1-4, multiple light passes better
+// BILATERAL 双边滤波参数
+int bilateralD = 9;              // 5-15, 越大降噪越强但越慢
+double bilateralSigmaColor = 50.0; // 10-150, 越小越保留纹理
+double bilateralSigmaSpace = 50.0; // 10-150, 控制平滑范围
+int bilateralIterations = 3;     // 1-4, 多次轻度滤波效果更好
 
-// Unsharp Mask parameters
-double unsharpSigma = 1.0;       // 0.5-3.0, smaller = finer sharpening
-double unsharpAmount = 1.5;      // 0.5-3.0, larger = more obvious
+// Unsharp Mask 锐化参数
+double unsharpSigma = 1.0;       // 0.5-3.0, 越小锐化越精细
+double unsharpAmount = 1.5;      // 0.5-3.0, 越大锐化越明显
 
-// Debug mode
-boolean isDebug = false;         // true = include params in filename
+// 调试模式
+boolean isDebug = false;         // true = 文件名包含参数值
 ```
