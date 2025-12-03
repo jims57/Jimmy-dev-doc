@@ -1,6 +1,4 @@
-# OpenCV 图像增强参数说明
-
-参考: https://www.projectpro.io/recipes/remove-noise-from-images-opencv
+# 【沃奇】图像降噪SDK参数说明
 
 ## 默认参数值
 
