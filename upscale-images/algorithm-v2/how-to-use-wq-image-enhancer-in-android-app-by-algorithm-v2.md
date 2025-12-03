@@ -1,10 +1,12 @@
-# 如何在Android应用中使用wq-image-enhancer-1.0.0.aar库
+# 如何在Android应用中使用wq-image-enhancer-1.3.0.aar库
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年11月27日*
+*最后更新：2025年12月3日*
 
-本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-enhancer-1.0.0.aar），该库提供高性能的图像降噪和增强功能。
+*当前版本：v1.3.0*
+
+本指南将详细介绍如何从零开始在Android项目中集成和使用【沃奇】图片降噪增强AAR库（wq-image-enhancer-1.3.0.aar），该库提供高性能的图像降噪和增强功能。
 
 ## 目录
 
@@ -15,7 +17,8 @@
 5. [权限配置](#权限配置)
 6. [基础使用方法](#基础使用方法)
 7. [API参考](#api参考)
-8. [常见问题解答](#常见问题解答)
+8. [参数微调指南](#参数微调指南)
+9. [常见问题解答](#常见问题解答)
 
 ## 库简介
 
@@ -40,13 +43,15 @@ wq-image-enhancer是一个专为Android开发的图像降噪增强AAR库，具�
 ### 方式一：从构建输出获取
 ```bash
 # AAR库文件位置
-/path/to/android_use_cpp/my-info/build_android_aar_based_on_opencv/aar-output/wq-image-enhancer-1.0.0.aar
+/path/to/android_use_cpp/my-info/build_android_aar_based_on_opencv/aar-output/wq-image-enhancer-1.3.0.aar
 ```
 
 ### 方式二：自行构建
 ```bash
 cd /path/to/android_use_cpp/my-info/build_android_aar_based_on_opencv
 ./build_android_aar_based_on_opencv.sh
+# 或者指定版本号:
+./build_android_aar_based_on_opencv.sh --sdkVersion 1.3.0
 ```
 
 ## 项目集成步骤
@@ -60,7 +65,7 @@ cd /path/to/android_use_cpp/my-info/build_android_aar_based_on_opencv
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wq-image-enhancer-1.0.0.aar /path/to/your/android/project/app/libs/
+cp wq-image-enhancer-1.3.0.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -77,7 +82,7 @@ dependencies {
 }
 ```
 
-**重要提示：** wq-image-enhancer-1.0.0.aar已经内置了所有必需的native库，无需手动添加其他依赖！
+**重要提示：** wq-image-enhancer-1.3.0.aar已经内置了所有必需的native库，无需手动添加其他依赖！
 
 ### 第3步：同步项目
 
@@ -150,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 currentBitmap,                              // 输入Bitmap
                 true,                                       // 是否保存到Documents
                 ImageEnhancer.DenoiseMethod.BILATERAL,      // 降噪方法
-                true,                                       // 启用锐化
+                false,                                      // 启用锐化(默认false,淡海项目建议关闭)
                 (Float progress) -> {                       // 进度回调
                     runOnUiThread(() -> {
                         progressText.setText(String.format("处理中(%.0f%%)", progress));
@@ -212,7 +217,14 @@ ImageEnhancer.EnhanceResult result = imageEnhancer.enhanceBitmapBlocking(
     inputBitmap,           // Bitmap: 输入图像
     saveAfterEnhanced,     // boolean: 是否保存到Documents目录
     denoiseMethod,         // DenoiseMethod: 降噪方法
-    enableUnsharpMask,     // boolean: 是否启用锐化
+    enableUnsharpMask,     // boolean: 是否启用锐化(默认false)
+    bilateralD,            // int: 双边滤波直径(默认8)
+    bilateralSigmaColor,   // double: 颜色sigma(默认50)
+    bilateralSigmaSpace,   // double: 空间sigma(默认30)
+    bilateralIterations,   // int: 迭代次数(默认2)
+    unsharpSigma,          // double: 锐化sigma(默认1.0)
+    unsharpAmount,         // double: 锐化强度(默认1.5)
+    isDebug,               // boolean: 调试模式(默认false)
     progressCallback       // Function1<Float, Unit>: 进度回调(0-100)
 );
 
@@ -252,6 +264,35 @@ result.getProcessingTimeMs() // long: 处理耗时（毫秒）
 // 使用完毕后清理资源
 imageEnhancer.cleanup();
 ```
+
+## 参数微调指南
+
+详细的参数说明和微调建议请参考: [fine-tune-parameter.md](../fine-tune/fine-tune-parameter.md)
+
+### 默认参数值 (v1.3.0)
+
+```java
+// 是否启用锐化 (淡海项目建议关闭以减少伪影噪点)
+boolean enableUnsharpMask = false; // 默认: false
+
+// BILATERAL双边滤波参数
+int bilateralD = 8;              // 范围: 5-15, 推荐: 8
+double bilateralSigmaColor = 50.0; // 范围: 10-150, 推荐: 50
+double bilateralSigmaSpace = 30.0; // 范围: 10-150, 推荐: 30
+int bilateralIterations = 2;     // 范围: 1-4, 推荐: 2
+
+// Unsharp Mask锐化参数 (仅当enableUnsharpMask=true时生效)
+double unsharpSigma = 1.0;       // 范围: 0.5-3.0
+double unsharpAmount = 1.5;      // 范围: 0.5-3.0
+
+// 调试模式
+boolean isDebug = false;         // true时文件名包含参数值
+```
+
+### 调试模式文件命名
+
+当 `isDebug = true` 时，保存的文件名包含参数值:
+- 示例: `enhanced_20251203_143109(UnsharpFalse-D8-Color50-Space30-it2-Sigma1.0-Amount1.5).jpg`
 
 ## 常见问题解答
 
@@ -293,6 +334,16 @@ if (result.getSuccess()) {
 ---
 
 ## 版本历史
+
+### 版本 1.3.0 (2025年12月3日)
+
+- 优化默认参数值（经Jimmy测试对比，适合淡海项目）
+  - enableUnsharpMask默认为false（减少伪影噪点）
+  - bilateralD默认为8（平衡速度和效果）
+  - bilateralSigmaSpace默认为30（局部降噪保留细节）
+  - bilateralIterations默认为2（速度更快）
+- 调试模式文件名新增锐化状态标识（UnsharpTrue/UnsharpFalse）
+- 构建脚本支持--sdkVersion参数
 
 ### 版本 1.0.0 (2025年11月27日)
 

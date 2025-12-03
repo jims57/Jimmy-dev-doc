@@ -1,7 +1,10 @@
 # 如何在iOS应用中使用WQImageEnhancer.xcframework库
 
 *作者：Jimmy Gan*
-*最后更新：2025年11月28日*
+
+*最后更新：2025年12月3日*
+
+*当前版本：v1.3.0*
 
 本指南介绍如何在iOS项目中集成【沃奇】WQImageEnhancer.xcframework图像降噪增强库。
 
@@ -67,7 +70,7 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
         WQEnhanceResult *result = [self.enhancer enhanceImage:image
                                             saveAfterEnhanced:NO
                                                 denoiseMethod:WQ_DENOISE_BILATERAL
-                                            enableUnsharpMask:YES
+                                            enableUnsharpMask:NO  // 默认关闭，淡海项目建议关闭以减少伪影
                                              progressCallback:^(float progress) {
             NSLog(@"进度: %.2f%%", progress);
         }];
@@ -145,7 +148,36 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
 
 注意：图像不会被缩放，始终以原始分辨率进行处理。
 
+## 参数微调指南
+
+详细的参数说明和微调建议请参考: [fine-tune-parameter.md](../fine-tune/fine-tune-parameter.md)
+
+### 默认参数值 (v1.3.0)
+
+```objc
+// 是否启用锐化 (淡海项目建议关闭以减少伪影噪点)
+BOOL enableUnsharpMask = NO; // 默认: NO
+
+// BILATERAL双边滤波参数
+int bilateralD = 8;              // 范围: 5-15, 推荐: 8
+double bilateralSigmaColor = 50.0; // 范围: 10-150, 推荐: 50
+double bilateralSigmaSpace = 30.0; // 范围: 10-150, 推荐: 30
+int bilateralIterations = 2;     // 范围: 1-4, 推荐: 2
+
+// Unsharp Mask锐化参数 (仅当enableUnsharpMask=YES时生效)
+double unsharpSigma = 1.0;       // 范围: 0.5-3.0
+double unsharpAmount = 1.5;      // 范围: 0.5-3.0
+```
+
 ## 版本历史
+
+### v1.3.0 (2025-12-03)
+- 优化默认参数值（经Jimmy测试对比，适合淡海项目）
+  - enableUnsharpMask默认为NO（减少伪影噪点）
+  - bilateralD默认为8（平衡速度和效果）
+  - bilateralSigmaSpace默认为30（局部降噪保留细节）
+  - bilateralIterations默认为2（速度更快）
+- 添加参数微调指南参考
 
 ### v1.1.1 (2025-11-28)
 - 支持iOS 13.0+（之前为iOS 15.0+）
