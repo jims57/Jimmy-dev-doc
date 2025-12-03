@@ -178,6 +178,7 @@ double unsharpAmount = 1.5;      // 范围: 0.5-3.0
   - bilateralSigmaSpace默认为30（局部降噪保留细节）
   - bilateralIterations默认为2（速度更快）
 - 添加参数微调指南参考
+- 添加build脚本--sdkVersion参数支持
 
 ### v1.1.1 (2025-11-28)
 - 支持iOS 13.0+（之前为iOS 15.0+）
