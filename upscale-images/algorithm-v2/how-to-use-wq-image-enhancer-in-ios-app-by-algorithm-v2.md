@@ -2,7 +2,7 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年12月3日*
+*最后更新：2025年12月4日*
 
 *当前版本：v1.3.0*
 
@@ -103,17 +103,48 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
 
 ## API参考
 
+### 默认参数值常量
+
+```objc
+// 可直接使用这些常量，无需硬编码
+extern const int WQ_DEFAULT_BILATERAL_D;              // 8
+extern const double WQ_DEFAULT_BILATERAL_SIGMA_COLOR; // 50.0
+extern const double WQ_DEFAULT_BILATERAL_SIGMA_SPACE; // 30.0
+extern const int WQ_DEFAULT_BILATERAL_ITERATIONS;     // 2
+extern const BOOL WQ_DEFAULT_ENABLE_UNSHARP_MASK;     // NO
+extern const double WQ_DEFAULT_UNSHARP_SIGMA;         // 1.0
+extern const double WQ_DEFAULT_UNSHARP_AMOUNT;        // 1.5
+```
+
 ### WQImageEnhancer
 
 ```objc
 // 初始化
 - (BOOL)initializeAndReturnError:(NSError **)error;
 
-// 处理UIImage
+// 基础方法 - 使用默认参数
 - (WQEnhanceResult *)enhanceImage:(UIImage *)inputImage
                 saveAfterEnhanced:(BOOL)saveAfterEnhanced
                     denoiseMethod:(WQDenoiseMethod)denoiseMethod
                 enableUnsharpMask:(BOOL)enableUnsharpMask
+                 progressCallback:(void(^)(float progress))progressCallback;
+
+// 完整方法 - 支持自定义参数和调试模式
+// isDebug参数说明:
+//   - YES: 调试模式，文件名包含参数信息，如: enhanced_20251203_143109(UnsharpFalse-D8-Color50-Space30-it2-Sigma1.0-Amount1.5).jpg
+//          同时在控制台输出详细参数日志
+//   - NO: 正常文件名，如: enhanced_20251203_143109.jpg
+- (WQEnhanceResult *)enhanceImage:(UIImage *)inputImage
+                saveAfterEnhanced:(BOOL)saveAfterEnhanced
+                    denoiseMethod:(WQDenoiseMethod)denoiseMethod
+                enableUnsharpMask:(BOOL)enableUnsharpMask
+                      bilateralD:(int)bilateralD
+              bilateralSigmaColor:(double)bilateralSigmaColor
+              bilateralSigmaSpace:(double)bilateralSigmaSpace
+             bilateralIterations:(int)bilateralIterations
+                     unsharpSigma:(double)unsharpSigma
+                    unsharpAmount:(double)unsharpAmount
+                          isDebug:(BOOL)isDebug
                  progressCallback:(void(^)(float progress))progressCallback;
 
 // 处理文件路径
@@ -155,28 +186,40 @@ WQImageEnhancer是专为iOS开发的图像降噪增强库：
 ### 默认参数值 (v1.3.0)
 
 ```objc
+// 提醒：建议不要修改这些参数，因为这些参数是经Jimmy反复测试和优化的
+// 如果修改了，可能会导致降噪效果变差
+
 // 是否启用锐化 (淡海项目建议关闭以减少伪影噪点)
-BOOL enableUnsharpMask = NO; // 默认: NO
+BOOL enableUnsharpMask = WQ_DEFAULT_ENABLE_UNSHARP_MASK; // 默认: NO
 
 // BILATERAL双边滤波参数
-int bilateralD = 8;              // 范围: 5-15, 推荐: 8
-double bilateralSigmaColor = 50.0; // 范围: 10-150, 推荐: 50
-double bilateralSigmaSpace = 30.0; // 范围: 10-150, 推荐: 30
-int bilateralIterations = 2;     // 范围: 1-4, 推荐: 2
+int bilateralD = WQ_DEFAULT_BILATERAL_D;                    // 范围: 5-15, 默认: 8
+double bilateralSigmaColor = WQ_DEFAULT_BILATERAL_SIGMA_COLOR; // 范围: 10-150, 默认: 50
+double bilateralSigmaSpace = WQ_DEFAULT_BILATERAL_SIGMA_SPACE; // 范围: 10-150, 默认: 30
+int bilateralIterations = WQ_DEFAULT_BILATERAL_ITERATIONS;  // 范围: 1-4, 默认: 2
 
 // Unsharp Mask锐化参数 (仅当enableUnsharpMask=YES时生效)
-double unsharpSigma = 1.0;       // 范围: 0.5-3.0
-double unsharpAmount = 1.5;      // 范围: 0.5-3.0
+double unsharpSigma = WQ_DEFAULT_UNSHARP_SIGMA;             // 范围: 0.5-3.0, 默认: 1.0
+double unsharpAmount = WQ_DEFAULT_UNSHARP_AMOUNT;           // 范围: 0.5-3.0, 默认: 1.5
+
+// 调试模式开关
+// isDebug参数说明:
+//   - YES: 调试模式，文件名包含参数信息，如: enhanced_20251203_143109(UnsharpFalse-D8-Color50-Space30-it2-Sigma1.0-Amount1.5).jpg
+//          同时在控制台输出详细参数日志
+//   - NO: 正常文件名，如: enhanced_20251203_143109.jpg
+BOOL isDebug = NO; // 默认: NO
 ```
 
 ## 版本历史
 
-### v1.3.0 (2025-12-03)
+### v1.3.0 (2025-12-04)
 - 优化默认参数值（经Jimmy测试对比，适合淡海项目）
   - enableUnsharpMask默认为NO（减少伪影噪点）
   - bilateralD默认为8（平衡速度和效果）
   - bilateralSigmaSpace默认为30（局部降噪保留细节）
   - bilateralIterations默认为2（速度更快）
+- 添加默认参数值常量(WQ_DEFAULT_XXX)，App可直接使用
+- 添加完整方法支持自定义参数和isDebug调试模式
 - 添加参数微调指南参考
 - 添加build脚本--sdkVersion参数支持
 
