@@ -6,7 +6,7 @@
 
 *版本：v1.5.0*
 
-本指南详细介绍如何在Android项目中集成和使用【沃奇】风格滤镜AAR库（wq-ffmpeg-style-filter-1.5.0.aar），该库基于3D LUT色彩查找表技术提供强大的图像风格转换功能。
+本指南详细介绍如何在Android项目中集成和使用【沃奇】风格滤镜AAR库（wq-style-filter-1.5.0.aar），该库基于3D LUT色彩查找表技术提供强大的图像风格转换功能。
 
 ## 目录
 
@@ -47,7 +47,7 @@ WQStyleFilter是一个专为Android开发的图像风格滤镜AAR库，具有以
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wq-ffmpeg-style-filter-1.5.0.aar /path/to/your/android/project/app/libs/
+cp wq-style-filter-1.5.0.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -57,7 +57,7 @@ cp wq-ffmpeg-style-filter-1.5.0.aar /path/to/your/android/project/app/libs/
 ```kotlin
 dependencies {
     // WQStyleFilter AAR库
-    implementation(files("libs/wq-ffmpeg-style-filter-1.5.0.aar"))
+    implementation(files("libs/wq-style-filter-1.5.0.aar"))
     
     // 其他现有依赖...
 }
@@ -467,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
 
 如果您在使用过程中遇到问题，请检查：
 
-1. **AAR文件**：确保wq-ffmpeg-style-filter-1.5.0.aar已正确放置在app/libs/目录
+1. **AAR文件**：确保wq-style-filter-1.5.0.aar已正确放置在app/libs/目录
 2. **LUT文件**：确保.cube文件已正确放置在assets/lut/formated-luts/目录
 3. **权限设置**：确保必要的存储权限已授予（如需保存）
 4. **日志输出**：查看LogCat中的"WQStyleFilter"标签获取详细信息
