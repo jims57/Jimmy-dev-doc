@@ -4,7 +4,7 @@
 
 *最后更新：2025年12月15日*
 
-*版本：v1.2.0（对应Android版：v1.5.0）*
+*版本：v1.2.1（对应Android版：v1.5.0）*
 
 
 本指南详细介绍如何在iOS项目中集成和使用【沃奇】风格滤镜XCFramework，该库基于3D LUT色彩查找表技术提供强大的图像风格转换功能。
@@ -78,8 +78,8 @@ cp -R WQStyleFilterFramework.xcframework /path/to/your/ios/project/
 | 方法 | 说明 | 返回值 |
 |------|------|--------|
 | `applyStyleFilterFastWithCubePath:inputImagePath:outputPath:isDebug:error:` | 应用风格滤镜到图像 | `WQFilterResult` |
-| `preloadAllLutFilesFromFolder:isDebug:` | 预加载所有LUT文件到内存 | `NSInteger` (加载数量) |
-| `getLutFilterNamesFromFolder:` | 获取所有可用滤镜名称列表 | `NSArray<NSString *>` |
+| `preloadAllLutFilesFromFolder:isDebug:` | 预加载所有LUT文件到内存（支持绝对路径或相对路径） | `NSInteger` (加载数量) |
+| `getLutFilterNamesFromFolder:` | 获取所有可用滤镜名称列表（支持绝对路径或相对路径） | `NSArray<NSString *>` |
 | `isAllLutsLoaded` | 检查是否已预加载所有LUT | `BOOL` |
 | `getLoadedLutCount` | 获取已加载的LUT数量 | `NSInteger` |
 
@@ -134,13 +134,22 @@ NSArray<NSString *> *filterNames = [self.styleFilter getLutFilterNamesFromFolder
 
 ```objc
 dispatch_async(self.processingQueue, ^{
+    // 方式1: 使用Bundle相对路径
     NSInteger loadedCount = [self.styleFilter preloadAllLutFilesFromFolder:@"" isDebug:YES];
+    
+    // 方式2: 使用自定义绝对路径（v1.2.1新增）
+    // NSString *customLutPath = @"/var/mobile/Containers/Data/Application/.../luts";
+    // NSInteger loadedCount = [self.styleFilter preloadAllLutFilesFromFolder:customLutPath isDebug:YES];
     
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"已加载 %ld 个LUT文件", (long)loadedCount);
     });
 });
 ```
+
+**路径参数说明（v1.2.1新增）：**
+- **绝对路径**（以`/`开头）：直接使用该路径，例如 `@"/var/mobile/Containers/Data/Application/.../luts"`
+- **相对路径**：从mainBundle获取，例如 `@"lut/formated-luts"` 或 `@""`
 
 ### 4. 应用滤镜
 
