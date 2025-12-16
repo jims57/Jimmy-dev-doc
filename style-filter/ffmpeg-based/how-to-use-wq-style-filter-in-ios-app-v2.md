@@ -84,7 +84,14 @@ cp -R WQStyleFilterFramework.xcframework /path/to/your/ios/project/
 | `isAllLutsLoaded` | 检查是否已预加载所有LUT | `BOOL` |
 | `getLoadedLutCount` | 获取已加载的LUT数量 | `NSInteger` |
 
-#### LUT文件管理方法（v1.2.2新增）
+#### 初始化方法
+
+| 方法 | 说明 | 返回值 |
+|------|------|--------|
+| `initWithLutBundle:subpath:isDebug:` | 使用指定的NSBundle初始化，并自动预加载所有LUT文件（v1.2.2新增，推荐） | `WQStyleFilter` |
+| `initWithLutFolder:isDebug:` | 使用指定的LUT文件夹路径初始化，并自动预加载所有LUT文件 | `WQStyleFilter` |
+
+#### LUT文件管理方法
 
 | 方法 | 说明 | 返回值 |
 |------|------|--------|
@@ -119,7 +126,6 @@ cp -R WQStyleFilterFramework.xcframework /path/to/your/ios/project/
 @interface ViewController ()
 @property (nonatomic, strong) WQStyleFilter *styleFilter;
 @property (nonatomic, strong) dispatch_queue_t processingQueue;
-@property (nonatomic, strong) NSString *customLutFolderPath;
 @end
 
 @implementation ViewController
@@ -127,50 +133,38 @@ cp -R WQStyleFilterFramework.xcframework /path/to/your/ios/project/
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 方式1: 使用xcframework提供的方法设置自定义LUT文件夹（推荐，v1.2.2新增）
-    // 自动将bundle中的.cube文件复制到Documents/luts目录
-    self.customLutFolderPath = [WQStyleFilter setupCustomLutFolderWithDebug:YES];
-    self.styleFilter = [[WQStyleFilter alloc] initWithLutFolder:self.customLutFolderPath isDebug:YES];
+    // 方式1: 使用NSBundle初始化（v1.2.2新增，推荐）
+    // 直接从mainBundle加载LUT文件，subpath为nil表示从bundle根目录加载
+    self.styleFilter = [[WQStyleFilter alloc] initWithLutBundle:[NSBundle mainBundle] subpath:nil isDebug:YES];
     
-    // 方式2: 使用默认init方法，手动预加载LUT
-    // self.styleFilter = [[WQStyleFilter alloc] init];
+    // 方式2: 使用自定义Bundle和子路径
+    // NSBundle *customBundle = [NSBundle bundleWithPath:@"path/to/custom.bundle"];
+    // self.styleFilter = [[WQStyleFilter alloc] initWithLutBundle:customBundle subpath:@"lut/formated-luts" isDebug:YES];
+    
+    // 方式3: 使用setupCustomLutFolderWithDebug复制LUT到Documents目录
+    // NSString *lutFolderPath = [WQStyleFilter setupCustomLutFolderWithDebug:YES];
+    // self.styleFilter = [[WQStyleFilter alloc] initWithLutFolder:lutFolderPath isDebug:YES];
     
     self.processingQueue = dispatch_queue_create("cn.watchfun.stylefilter", DISPATCH_QUEUE_SERIAL);
 }
 ```
 
+**initWithLutBundle参数说明（v1.2.2新增）：**
+- **bundle**: 包含LUT文件的NSBundle对象，传入nil时使用mainBundle
+- **subpath**: bundle内LUT文件所在的子路径，传入nil或空字符串时从bundle根目录加载
+
 ### 2. 获取滤镜列表
 
 ```objc
-// 方式1: 从自定义LUT文件夹获取（推荐）
-NSArray<NSString *> *filterNames = [self.styleFilter getLutFilterNamesFromFolder:self.customLutFolderPath];
-
-// 方式2: 从Bundle中获取
+// 从Bundle中获取滤镜列表
 NSArray<NSString *> *filterNames = [self.styleFilter getLutFilterNamesFromFolder:@""];
-```
-
-### 3. 预加载所有LUT文件（可选，推荐）
-
-```objc
-dispatch_async(self.processingQueue, ^{
-    // 方式1: 使用Bundle相对路径
-    NSInteger loadedCount = [self.styleFilter preloadAllLutFilesFromFolder:@"" isDebug:YES];
-    
-    // 方式2: 使用自定义绝对路径（v1.2.1新增）
-    // NSString *customLutPath = @"/var/mobile/Containers/Data/Application/.../luts";
-    // NSInteger loadedCount = [self.styleFilter preloadAllLutFilesFromFolder:customLutPath isDebug:YES];
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"已加载 %ld 个LUT文件", (long)loadedCount);
-    });
-});
 ```
 
 **路径参数说明（v1.2.1新增）：**
 - **绝对路径**（以`/`开头）：直接使用该路径，例如 `@"/var/mobile/Containers/Data/Application/.../luts"`
 - **相对路径**：从mainBundle获取，例如 `@"lut/formated-luts"` 或 `@""`
 
-### 4. 应用滤镜
+### 3. 应用滤镜
 
 ```objc
 - (void)applyFilterWithName:(NSString *)filterName toImage:(UIImage *)image {
@@ -207,7 +201,7 @@ dispatch_async(self.processingQueue, ^{
 }
 ```
 
-### 5. 保存处理结果
+### 4. 保存处理结果
 
 ```objc
 // 方式1: 使用saveFilteredImageToDocuments保存（推荐，v1.2.2新增）
@@ -240,7 +234,6 @@ NSString *savedPath = [self.styleFilter saveBitmapToDocuments:outputImage filter
 @property (nonatomic, strong) UIImage *selectedImage;
 @property (nonatomic, strong) WQStyleFilter *styleFilter;
 @property (nonatomic, strong) dispatch_queue_t processingQueue;
-@property (nonatomic, strong) NSString *customLutFolderPath;
 
 @end
 
@@ -249,9 +242,8 @@ NSString *savedPath = [self.styleFilter saveBitmapToDocuments:outputImage filter
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 使用xcframework提供的方法设置自定义LUT文件夹
-    self.customLutFolderPath = [WQStyleFilter setupCustomLutFolderWithDebug:YES];
-    self.styleFilter = [[WQStyleFilter alloc] initWithLutFolder:self.customLutFolderPath isDebug:YES];
+    // 使用NSBundle初始化（v1.2.2新增，推荐）
+    self.styleFilter = [[WQStyleFilter alloc] initWithLutBundle:[NSBundle mainBundle] subpath:nil isDebug:YES];
     self.processingQueue = dispatch_queue_create("cn.watchfun.stylefilter", DISPATCH_QUEUE_SERIAL);
     self.filterNames = [NSMutableArray array];
     
@@ -260,8 +252,8 @@ NSString *savedPath = [self.styleFilter saveBitmapToDocuments:outputImage filter
 }
 
 - (void)loadLUTFilters {
-    // 从自定义LUT文件夹获取滤镜列表
-    NSArray *names = [self.styleFilter getLutFilterNamesFromFolder:self.customLutFolderPath];
+    // 从Bundle获取滤镜列表
+    NSArray *names = [self.styleFilter getLutFilterNamesFromFolder:@""];
     [self.filterNames addObjectsFromArray:names];
     [self.filterPicker reloadAllComponents];
 }
@@ -271,8 +263,8 @@ NSString *savedPath = [self.styleFilter saveBitmapToDocuments:outputImage filter
     
     NSInteger selectedRow = [self.filterPicker selectedRowInComponent:0];
     NSString *filterName = self.filterNames[selectedRow];
-    // 使用自定义LUT文件夹路径
-    NSString *cubePath = [self.customLutFolderPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.cube", filterName]];
+    // 使用mainBundle获取LUT文件路径
+    NSString *cubePath = [[NSBundle mainBundle] pathForResource:filterName ofType:@"cube"];
     
     dispatch_async(self.processingQueue, ^{
         // 保存到临时文件
