@@ -240,11 +240,6 @@ NSString *savedPath = [self.styleFilter saveBitmapToDocuments:outputImage filter
 @property (nonatomic, strong) UIImage *selectedImage;
 @property (nonatomic, strong) WQStyleFilter *styleFilter;
 @property (nonatomic, strong) dispatch_queue_t processingQueue;
-
-@end
-
-@implementation ViewController
-
 @property (nonatomic, strong) NSString *customLutFolderPath;
 
 @end
