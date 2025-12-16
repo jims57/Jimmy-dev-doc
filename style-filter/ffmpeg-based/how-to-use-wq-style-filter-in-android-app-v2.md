@@ -247,12 +247,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // 方式1: 使用默认LUT路径 "lut/formated-luts"
-        styleFilter = new WQStyleFilter(this);
-        
-        // 方式2: 自定义LUT路径（满足团队项目不同目录需求）
-        // styleFilter = new WQStyleFilter(this, "your/custom/lut/path", false);
-        
+        // 初始化WQStyleFilter AAR
+        // 默认用法: styleFilter = new WQStyleFilter(this);  // 使用默认LUT路径 "lut/formated-luts"
+        // 自定义LUT路径用法（第三个参数isDebug: false=不打印调试日志, true=打印调试日志）
+        styleFilter = new WQStyleFilter(this, "lut/formated-luts", false);
         executorService = Executors.newSingleThreadExecutor();
     }
 }
