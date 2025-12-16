@@ -42,15 +42,22 @@ implementation(files("libs/wq-ffmpeg-style-filter-1.7.0.aar"))
 **音频转换示例（团队项目需求）：**
 
 ```java
-// Opus/MP3 转 PCM
-String command = String.format(Locale.US, 
+// 方式1: 使用WQFFmpegKit工具类
+WQFFmpegKit.convertToPcm(inputPath, outputPath, 16000);
+WQFFmpegKit.convertPcmToMp3(inputPath, outputPath, 16000);
+
+// 方式2: 直接使用FFmpeg命令（更灵活）
+// MP3/Opus -> PCM
+String cmdToPcm = String.format(Locale.US, 
     "-y -i \"%s\" -f s16le -ar %d -ac 1 \"%s\"",
     inputPath, sampleRate, outputPath);
-FFmpegKit.execute(command);
+FFmpegKit.execute(cmdToPcm);
 
-// 或使用WQFFmpegKit工具类
-WQFFmpegKit.AudioConversionResult result = 
-    WQFFmpegKit.convertToPcm(inputPath, outputPath, 16000);
+// PCM -> MP3
+String cmdToMp3 = String.format(Locale.US,
+    "-y -f s16le -ar %d -ac 1 -i \"%s\" -codec:a libmp3lame -b:a 64k -q:a 2 \"%s\"",
+    sampleRate, inputPath, outputPath);
+FFmpegKit.execute(cmdToMp3);
 ```
 
 ## 目录
