@@ -545,7 +545,7 @@ public class MainActivity extends AppCompatActivity {
 
 如果您在使用过程中遇到问题，请检查：
 
-1. **AAR文件**：确保wq-style-filter-1.5.0.aar已正确放置在app/libs/目录
+1. **AAR文件**：确保wq-style-filter-1.7.0.aar已正确放置在app/libs/目录
 2. **LUT文件**：确保.cube文件已正确放置在assets/lut/formated-luts/目录
 3. **权限设置**：确保必要的存储权限已授予（如需保存）
 4. **日志输出**：查看LogCat中的"WQStyleFilter"标签获取详细信息
