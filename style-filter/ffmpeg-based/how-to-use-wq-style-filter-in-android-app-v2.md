@@ -401,12 +401,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 初始化WQStyleFilter AAR
-        styleFilter = new WQStyleFilter(this);
+        // 默认用法: styleFilter = new WQStyleFilter(this);  // 使用默认LUT路径 "lut/formated-luts"
+        // 自定义LUT路径用法（第三个参数isDebug: false=不打印调试日志, true=打印调试日志）
+        styleFilter = new WQStyleFilter(this, "lut/formated-luts", false);
         executorService = Executors.newSingleThreadExecutor();
 
         // 初始化UI组件
         initializeViews();
-        loadLUTFilters();
+        setupFilterSpinner();
     }
 
     private void initializeViews() {
