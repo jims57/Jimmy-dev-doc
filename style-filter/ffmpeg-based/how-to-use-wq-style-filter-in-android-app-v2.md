@@ -168,8 +168,17 @@ import cn.watchfun.stylefilter.WQStyleFilter;
 #### 构造函数
 
 ```java
+// 使用默认LUT路径 "lut/formated-luts"
 WQStyleFilter(Context context)
+
+// 自定义LUT路径（满足团队项目不同目录需求）
+WQStyleFilter(Context context, String lutAssetFolder, boolean isDebug)
 ```
+
+**参数说明：**
+- `context`: Android上下文
+- `lutAssetFolder`: LUT文件在assets中的文件夹路径，如 `"lut/formated-luts"` 或 `"your/custom/lut/path"`
+- `isDebug`: 是否打印调试日志
 
 #### 核心方法
 
@@ -231,8 +240,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // 初始化WQStyleFilter
+        // 方式1: 使用默认LUT路径 "lut/formated-luts"
         styleFilter = new WQStyleFilter(this);
+        
+        // 方式2: 自定义LUT路径（满足团队项目不同目录需求）
+        // styleFilter = new WQStyleFilter(this, "your/custom/lut/path", false);
+        
         executorService = Executors.newSingleThreadExecutor();
     }
 }
@@ -241,8 +254,8 @@ public class MainActivity extends AppCompatActivity {
 ### 2. 获取滤镜列表
 
 ```java
-// 使用AAR提供的方法获取滤镜列表（已排序）
-List<String> filterNames = styleFilter.getLutFilterNames("lut/formated-luts");
+// 使用AAR提供的方法获取滤镜列表（返回构造函数中缓存的列表）
+List<String> filterNames = styleFilter.getLutFilterNames();
 ```
 
 ### 3. 应用滤镜
