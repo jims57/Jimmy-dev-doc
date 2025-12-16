@@ -2,11 +2,56 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年12月12日*
+*最后更新：2025年12月16日*
 
-*版本：v1.5.0（对应iOS版：v1.2.0）*
+*版本：v1.7.0*
 
-本指南详细介绍如何在Android项目中集成和使用【沃奇】风格滤镜AAR库（wq-style-filter-1.5.0.aar），该库基于3D LUT色彩查找表技术提供强大的图像风格转换功能。
+本指南详细介绍如何在Android项目中集成和使用【沃奇】风格滤镜AAR库，该库基于3D LUT色彩查找表技术提供强大的图像风格转换功能。
+
+**本版本包含两个AAR文件：**
+- `wq-ffmpeg-kit-1.0.0.aar` (33MB) - 独立FFmpeg引擎，支持libmp3lame编码器
+- `wq-ffmpeg-style-filter-1.7.0.aar` (16KB) - 风格滤镜SDK
+
+## 为什么使用独立的FFmpeg-Kit AAR？
+
+在团队项目中，您可能已经使用了Maven仓库的FFmpeg-Kit依赖：
+
+```kotlin
+// 原有依赖（可能导致冲突）
+implementation("com.mrljdx:ffmpeg-kit-full:6.1.4")
+```
+
+**使用独立AAR的原因：**
+
+1. **避免依赖冲突**：如果项目中已有其他FFmpeg相关依赖，Maven版本可能导致类冲突或版本不兼容
+2. **统一版本管理**：确保风格滤镜SDK和音频转换使用相同的FFmpeg版本
+3. **离线可用**：无需网络即可构建项目
+4. **团队项目兼容**：支持团队项目中的音频转换需求（如Opus/MP3转PCM）
+
+**迁移方法：**
+
+```kotlin
+// 移除原有Maven依赖
+// implementation("com.mrljdx:ffmpeg-kit-full:6.1.4")  // 删除此行
+
+// 使用独立AAR
+implementation(files("libs/wq-ffmpeg-kit-1.0.0.aar"))
+implementation(files("libs/wq-ffmpeg-style-filter-1.7.0.aar"))
+```
+
+**音频转换示例（团队项目需求）：**
+
+```java
+// Opus/MP3 转 PCM
+String command = String.format(Locale.US, 
+    "-y -i \"%s\" -f s16le -ar %d -ac 1 \"%s\"",
+    inputPath, sampleRate, outputPath);
+FFmpegKit.execute(command);
+
+// 或使用WQFFmpegKit工具类
+WQFFmpegKit.AudioConversionResult result = 
+    WQFFmpegKit.convertToPcm(inputPath, outputPath, 16000);
+```
 
 ## 目录
 
@@ -24,30 +69,33 @@ WQStyleFilter是一个专为Android开发的图像风格滤镜AAR库，具有以
 
 - **3D LUT技术**：基于专业的3D色彩查找表算法
 - **多种滤镜**：支持富士、哈苏、理光等多种专业相机风格
-- **多线程优化**：利用所有CPU核心并行处理，性能卓越（典型处理时间600-900ms）
+- **多线程优化**：利用所有CPU核心并行处理，性能卓越（典型处理时间800-1500ms）
 - **Java友好**：纯Java API，无需Kotlin协程
-- **LUT预加载**：支持预加载所有LUT文件，加速后续滤镜应用
+- **自动LUT预加载**：构造函数自动预加载所有LUT文件到缓存
+- **FFmpeg预初始化**：构造函数自动预热FFmpeg引擎，消除首次调用延迟
+- **音频转换支持**：通过WQFFmpegKit工具类支持MP3/PCM音频转换
 - **丰富的辅助方法**：内置图像加载、保存、临时文件管理等功能
 
 ## 系统要求
 
-- **最低Android版本**：API 24 (Android 7.0)
+- **最低Android版本**：API 26 (Android 8.0)
 - **推荐内存**：至少1GB可用内存
-- **AAR大小**：约13MB
+- **AAR大小**：wq-ffmpeg-kit-1.0.0.aar (33MB) + wq-ffmpeg-style-filter-1.7.0.aar (16KB)
 - **处理器**：支持ARM64-v8a和ARMeabi-v7a架构
 
 ## 项目集成步骤
 
 ### 第1步：复制AAR文件
 
-将AAR文件复制到您的Android项目的`app/libs`目录：
+将两个AAR文件复制到您的Android项目的`app/libs`目录：
 
 ```bash
 # 创建libs目录（如果不存在）
 mkdir -p /path/to/your/android/project/app/libs
 
 # 复制AAR文件
-cp wq-style-filter-1.5.0.aar /path/to/your/android/project/app/libs/
+cp wq-ffmpeg-kit-1.0.0.aar /path/to/your/android/project/app/libs/
+cp wq-ffmpeg-style-filter-1.7.0.aar /path/to/your/android/project/app/libs/
 ```
 
 ### 第2步：配置build.gradle.kts
@@ -56,8 +104,14 @@ cp wq-style-filter-1.5.0.aar /path/to/your/android/project/app/libs/
 
 ```kotlin
 dependencies {
+    // FFmpeg-Kit AAR (替代 com.mrljdx:ffmpeg-kit-full:6.1.4)
+    implementation(files("libs/wq-ffmpeg-kit-1.0.0.aar"))
+    
     // WQStyleFilter AAR库
-    implementation(files("libs/wq-style-filter-1.5.0.aar"))
+    implementation(files("libs/wq-ffmpeg-style-filter-1.7.0.aar"))
+    
+    // smart-exception依赖（ffmpeg-kit需要）
+    implementation("com.arthenica:smart-exception-java:0.2.1")
     
     // 其他现有依赖...
 }
@@ -122,10 +176,23 @@ WQStyleFilter(Context context)
 | 方法 | 说明 | 返回值 |
 |------|------|--------|
 | `applyStyleFilterFast(String lutAssetPath, String inputImagePath, String outputPath, boolean isDebug)` | 应用风格滤镜到图像 | `FilterResult` |
-| `preloadAllLutFiles(String lutAssetFolder, boolean isDebug)` | 预加载所有LUT文件到内存 | `int` (加载数量) |
 | `getLutFilterNames(String lutAssetFolder)` | 获取所有可用滤镜名称列表 | `List<String>` |
-| `isAllLutsLoaded()` | 检查是否已预加载所有LUT | `boolean` |
+| `isAllLutsLoaded()` | 检查是否已预加载所有LUT（构造函数自动加载） | `boolean` |
 | `getLoadedLutCount()` | 获取已加载的LUT数量 | `int` |
+
+### WQFFmpegKit类（音频转换工具）
+
+```java
+import com.arthenica.ffmpegkit.WQFFmpegKit;
+```
+
+| 方法 | 说明 | 返回值 |
+|------|------|--------|
+| `convertToPcm(String inputPath, String outputPath, int sampleRate)` | MP3/Opus转PCM | `AudioConversionResult` |
+| `convertPcmToMp3(String inputPath, String outputPath, int sampleRate)` | PCM转MP3（使用libmp3lame） | `AudioConversionResult` |
+| `copyAssetToFile(Context context, String assetPath, File destFile)` | 从assets复制文件 | `boolean` |
+| `getDocumentsDir()` | 获取公共Documents目录 | `File` |
+| `preInitialize()` | 预初始化FFmpeg引擎 | `void` |
 
 #### 辅助方法
 
@@ -178,18 +245,9 @@ public class MainActivity extends AppCompatActivity {
 List<String> filterNames = styleFilter.getLutFilterNames("lut/formated-luts");
 ```
 
-### 3. 预加载所有LUT文件（可选，推荐）
+### 3. 应用滤镜
 
-```java
-executorService.execute(() -> {
-    int loadedCount = styleFilter.preloadAllLutFiles("lut/formated-luts", true);
-    runOnUiThread(() -> {
-        Toast.makeText(this, "已加载 " + loadedCount + " 个LUT文件", Toast.LENGTH_SHORT).show();
-    });
-});
-```
-
-### 4. 应用滤镜
+注意：LUT文件在构造函数中自动预加载，无需手动调用preloadAllLutFiles。
 
 ```java
 private void applyFilter(String assetImageName, String filterName) {
