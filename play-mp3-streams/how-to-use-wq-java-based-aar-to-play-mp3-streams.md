@@ -1132,4 +1132,4 @@ D/WQMp3StreamPlayer: 状态更新: PLAYING
 
 **文档结束**
 
-如有疑问或建议，请联系：jimmy@watchfun.cn
+如有疑问或建议，请联系：Jimmy Gan
