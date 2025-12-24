@@ -179,7 +179,7 @@ if (player != null) {
 YourProject/
 ├── app/
 │   ├── libs/
-│   │   └── wqmp3streamplayer.aar  ← 放在这里
+│   │   └── wqmp3streamplayer.aar
 │   ├── build.gradle.kts
 │   └── src/
 ```
