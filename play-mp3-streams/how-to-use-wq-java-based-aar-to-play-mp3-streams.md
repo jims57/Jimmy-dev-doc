@@ -1,8 +1,8 @@
 # WQMp3StreamPlayer AAR 使用指南
 
 > 作者：Jimmy Gan  
-> 日期：2025-11-17  
-> 版本：v1.3.0
+> 日期：2025-12-24  
+> 版本：v1.5.0
 
 ## 目录
 
@@ -34,6 +34,7 @@ WQMp3StreamPlayer 是一个轻量级高性能的 Android AAR 库，专注于播�
 - ✅ **音量控制**：支持静音和恢复音量功能 (v1.3.0)
 - ✅ **自动完成检测**：自动识别空流完成信号，5秒超时 (v1.3.0)
 - ✅ **多轮播放**：支持同一WebSocket连接多轮播放，自动状态管理 (v1.3.0)
+- ✅ **头部信息提取**：feedDataWithHeader()方法可返回startTimeId和messageId (v1.5.0)
 
 ### 1.3 什么时候需要移除头部？
 
@@ -350,6 +351,7 @@ WQMp3StreamPlayer player = new WQMp3StreamPlayer(this);
 | `initialize(StreamConfig, float)` | 初始化配置（带超时） | 流配置、超时秒数 (v1.3.0) |
 | `start()` | 开始播放 | 无 |
 | `feedData(byte[])` | 喂入音频数据 | 音频数据字节数组 |
+| `feedDataWithHeader(byte[])` | 喂入音频数据并返回头部信息 | 音频数据字节数组 (v1.5.0) |
 | `notifyDataComplete()` | 通知数据传输完成 | 无 |
 | `stop()` | 停止播放 | 无 |
 | `pause()` | 暂停播放 | 无 |
@@ -393,21 +395,44 @@ player.initialize(null);
 player.start();
 ```
 
-##### feedData(byte[])
+##### feedData(byte[]) / feedDataWithHeader(byte[])
 
 这是最重要的方法，用于将接收到的音频数据喂给播放器。
 
 **v1.3.0 新增：** 自动检测空流完成信号（0字节或12字节头部空流）。
 
+**v1.5.0 新增：** `feedDataWithHeader()` 方法可以返回从MP3数据中提取的 `startTimeId` 和 `messageId`。
+
 ```java
-// 在WebSocket回调中
-webSocket.setListener(new WebSocketListener() {
-    @Override
-    public void onMessage(WebSocket ws, ByteString bytes) {
-        // 直接传递给播放器
-        player.feedData(bytes.toByteArray());
+// 在WebSocket回调中接收MP3数据
+@Override
+public void onMessage(WebSocket webSocket, ByteString bytes) {
+    byte[] data = bytes.toByteArray();
+    Log.d(TAG, "接收到MP3数据: " + data.length + " 字节");
+    
+    // 将数据传递给播放器并获取头部信息（使用AAR）
+    if (player != null) {
+        WQMp3StreamPlayer.HeaderInfo headerInfo = player.feedDataWithHeader(data);
+        if (headerInfo.hasHeader) {
+            // 从MP3数据中提取的startTimeId和messageId
+            Log.d(TAG, "从MP3数据提取 - startTimeId: " + headerInfo.startTimeId + ", messageId: " + headerInfo.messageId);
+        }
     }
-});
+    
+    // 或者使用简单方式（不获取头部信息）：
+    // if (player != null) {
+    //     player.feedData(data);
+    // }
+}
+```
+
+**HeaderInfo 类 (v1.5.0)：**
+```java
+public static class HeaderInfo {
+    public final long startTimeId;   // 8字节开始时间ID
+    public final int messageId;      // 4字节消息ID
+    public final boolean hasHeader;  // 是否包含头部
+}
 ```
 
 **头部处理逻辑：**
@@ -801,6 +826,10 @@ public class MainActivity extends AppCompatActivity {
             request.put("speakerId", "0029532abc4672af1243539d5cac6f4d");
             request.put("outputSampleRate", 16000);
             request.put("audioFormat", "mp3");
+            request.put("speed", 1.0);
+            
+            // MP3 chunk时长设置，值越小响应越快，默认0.25秒
+            request.put("chunkDuration", 0.25);
             
             // 如果需要头部信息
             request.put("startTimeId", startTimeId);
