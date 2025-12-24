@@ -784,15 +784,7 @@ public class MainActivity extends AppCompatActivity {
 
 ### Q1: 播放有杂音或卡顿？
 
-**A:** 检查是否正确配置了头部信息。如果服务器发送的数据包含12字节头部，必须配置 `startTimeId` 和 `messageId`：
-
-```java
-StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(startTimeId)
-        .setMessageId(messageId)
-        .build();
-player.initialize(config);
-```
+**A:** AAR会自动检测并处理12字节头部信息，无需手动配置。如果仍有问题，检查网络连接是否稳定。
 
 ### Q2: 如何判断服务器是否发送了头部？
 
@@ -804,11 +796,11 @@ header_bytes = struct.pack('>QI', start_time_id, message_id)
 audio_bytes_with_headers = header_bytes + audio_bytes
 ```
 
-或查看网络抓包，如果每个数据包前12字节不是MP3数据，则是头部。
+AAR会自动检测并处理头部，无需手动配置。
 
 ### Q3: 为什么需要移除头部？
 
-**A:** MP3 解码器只能识别标准的 MP3 数据格式。如果数据包前有额外的头部信息，解码器会将其误认为是音频数据，导致杂音、卡顿或播放失败。
+**A:** MP3 解码器只能识别标准的 MP3 数据格式。AAR会自动检测并移除头部信息，确保音频正常播放。
 
 ### Q4: startTimeId 和 messageId 的值从哪里来？
 
@@ -825,11 +817,8 @@ request.put("messageId", messageId);
 request.put("text", "要播放的文本");
 webSocket.send(request.toString());
 
-// 配置播放器（使用相同的值）
-StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(startTimeId)
-        .setMessageId(messageId)
-        .build();
+// 初始化播放器（AAR会自动检测头部）
+player.initialize(null, 5.0f);
 ```
 
 ### Q5: 可以播放其他格式的音频吗（如PCM）？
