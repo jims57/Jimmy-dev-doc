@@ -67,50 +67,21 @@ websocket.send(audio_bytes)
 
 #### 步骤 1：添加 AAR 依赖
 
-**方式一：使用 Maven 本地仓库（推荐）- Media3依赖自动包含**
-
-1. 将整个 `libs-maven` 文件夹复制到项目的 `app/` 目录
-2. 在项目根目录的 `settings.gradle.kts` 中添加：
-
-```kotlin
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url = uri("${rootProject.projectDir.absolutePath}/app/libs-maven")
-        }
-    }
-}
-```
-
-3. 在 `app/build.gradle.kts` 中添加：
+将 `wqmp3streamplayer.aar` 文件复制到项目的 `app/libs/` 目录，然后在 `app/build.gradle.kts` 中添加：
 
 ```kotlin
 dependencies {
-    // WQMp3StreamPlayer - Media3依赖会自动包含
-    implementation("cn.watchfun:wqmp3streamplayer:1.0.0")
+    // WQMp3StreamPlayer AAR Library - 文件式
+    implementation(files("libs/wqmp3streamplayer.aar"))
+    
+    // Media3依赖 - AAR所需（必须手动添加）
+    implementation("androidx.media3:media3-exoplayer:1.2.0")
+    implementation("androidx.media3:media3-datasource:1.2.0")
+    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation("androidx.media3:media3-common:1.2.0")
     
     // 如果使用WebSocket，需要添加OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-}
-```
-
-**方式二：使用 AAR 文件 - 需要手动添加Media3依赖**
-
-将 `wqmp3streamplayer.aar` 文件复制到项目的 `app/libs/` 目录，然后在 `app/build.gradle` 中添加：
-
-```gradle
-dependencies {
-    implementation files('libs/wqmp3streamplayer.aar')
-    
-    // 必需的Media3依赖
-    implementation 'androidx.media3:media3-exoplayer:1.2.0'
-    implementation 'androidx.media3:media3-datasource:1.2.0'
-    implementation 'androidx.media3:media3-ui:1.2.0'
-    
-    // 如果使用WebSocket，需要添加OkHttp
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 ```
 
@@ -486,42 +457,11 @@ protected void onDestroy() {
 }
 ```
 
-### 4.2 StreamConfig 类
-
-流配置类，用于配置头部移除功能。
-
-#### 4.2.1 参数说明
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `startTimeId` | Long | null | 开始时间ID（8字节，可选） |
-| `messageId` | Integer | null | 消息ID（4字节，可选） |
-
-#### 4.2.2 使用示例
-
-**场景 1：服务器发送的数据包含头部**
-
-```java
-// 服务器端在每个音频包前添加了12字节头部
-StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(System.currentTimeMillis())  // 与服务器一致
-        .setMessageId(1001)                          // 与服务器一致
-        .build();
-player.initialize(config);
-```
-
-**场景 2：服务器发送的数据不包含头部**
-
-```java
-// 直接播放原始MP3数据
-player.initialize(null);
-```
-
-### 4.3 PlayerCallback 接口
+### 4.2 PlayerCallback 接口
 
 用于接收播放器状态和事件的回调接口。
 
-#### 4.3.1 回调方法
+#### 4.2.1 回调方法
 
 ```java
 public interface PlayerCallback {
@@ -531,7 +471,7 @@ public interface PlayerCallback {
 }
 ```
 
-#### 4.3.2 实现示例
+#### 4.2.2 实现示例
 
 ```java
 player.setCallback(new PlayerCallback() {
@@ -577,7 +517,7 @@ player.setCallback(new PlayerCallback() {
 });
 ```
 
-### 4.4 PlayerState 枚举
+### 4.3 PlayerState 枚举
 
 播放器状态枚举值。
 
