@@ -130,7 +130,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import cn.watchfun.mp3streamplayer.WQMp3StreamPlayer;
 import cn.watchfun.mp3streamplayer.PlayerCallback;
 import cn.watchfun.mp3streamplayer.PlayerState;
-import cn.watchfun.mp3streamplayer.StreamConfig;
 
 // 1. 创建播放器
 WQMp3StreamPlayer player = new WQMp3StreamPlayer(context);
@@ -160,15 +159,9 @@ player.setCallback(new PlayerCallback() {
 });
 
 // 3. 初始化播放器
-// 如果数据有12字节头部，配置头部信息
-StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(System.currentTimeMillis())
-        .setMessageId(1)
-        .build();
-player.initialize(config);
-
-// 如果数据没有头部，使用默认配置
-// player.initialize(null);
+// AAR会自动检测MP3流是否包含头部信息，无需手动配置
+// 使用5秒超时：如果5秒内没有新数据，将自动标记完成
+player.initialize(null, 5.0f);
 
 // 4. 启动播放器
 player.start();
@@ -347,8 +340,7 @@ WQMp3StreamPlayer player = new WQMp3StreamPlayer(this);
 | 方法 | 说明 | 参数 |
 |------|------|------|
 | `setCallback(PlayerCallback)` | 设置状态回调 | 回调接口 |
-| `initialize(StreamConfig)` | 初始化配置 | 流配置（可null） |
-| `initialize(StreamConfig, float)` | 初始化配置（带超时） | 流配置、超时秒数 (v1.3.0) |
+| `initialize(null, float)` | 初始化配置（带超时） | 超时秒数 (v1.3.0) |
 | `start()` | 开始播放 | 无 |
 | `feedData(byte[])` | 喂入音频数据 | 音频数据字节数组 |
 | `feedDataWithHeader(byte[])` | 喂入音频数据并返回头部信息 | 音频数据字节数组 (v1.5.0) |
@@ -366,25 +358,16 @@ WQMp3StreamPlayer player = new WQMp3StreamPlayer(this);
 
 #### 4.1.3 方法详解
 
-##### initialize(StreamConfig) / initialize(StreamConfig, float)
+##### initialize(null, float)
 
-初始化播放器配置。如果音频数据包含12字节头部，需要配置 `startTimeId` 和 `messageId`。
+初始化播放器配置。AAR会自动检测MP3流是否包含头部信息，无需手动配置。
 
 **v1.3.0 新增：** 支持设置超时参数，如果在指定时间内没有新数据，将自动标记完成。
 
 ```java
-// 有头部的情况
-StreamConfig config = new StreamConfig.Builder()
-        .setStartTimeId(123456L)  // 8字节
-        .setMessageId(789)        // 4字节
-        .build();
-player.initialize(config);
-
-// 无头部的情况（推荐 - AAR会自动检测）
-player.initialize(null, 5.0f);  // 5秒超时
-
-// 使用默认超时（5秒）
-player.initialize(null);
+// AAR会自动检测MP3流是否包含头部信息，无需手动配置
+// 使用5秒超时：如果5秒内没有新数据，将自动标记完成
+player.initialize(null, 5.0f);
 ```
 
 ##### start()
