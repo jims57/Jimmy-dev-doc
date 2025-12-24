@@ -175,37 +175,13 @@ if (player != null) {
 
 ### 3.1 添加 AAR 到项目
 
-#### 方式一：使用 Maven 本地仓库（推荐）
-
-**优点**：Media3依赖自动包含，无需手动添加
-
 ```
 YourProject/
 ├── app/
-│   ├── libs-maven/  ← 复制整个文件夹到这里
-│   │   └── cn/
-│   │       └── watchfun/
-│   │           └── wqmp3streamplayer/
-│   │               ├── 1.0.0/
-│   │               └── maven-metadata.xml
+│   ├── libs/
+│   │   └── wqmp3streamplayer.aar  ← 放在这里
 │   ├── build.gradle.kts
 │   └── src/
-├── settings.gradle.kts  ← 在这里配置
-```
-
-在项目根目录的 `settings.gradle.kts` 中：
-
-```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url = uri("${rootProject.projectDir.absolutePath}/app/libs-maven")
-        }
-    }
-}
 ```
 
 在 `app/build.gradle.kts` 中：
@@ -220,62 +196,23 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
-    // WQMp3StreamPlayer - Media3依赖自动包含
-    implementation("cn.watchfun:wqmp3streamplayer:1.0.0")
+    // WQMp3StreamPlayer AAR Library - 文件式
+    implementation(files("libs/wqmp3streamplayer.aar"))
+    
+    // Media3依赖 - AAR所需（必须手动添加）
+    implementation("androidx.media3:media3-exoplayer:1.2.0")
+    implementation("androidx.media3:media3-datasource:1.2.0")
+    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation("androidx.media3:media3-common:1.2.0")
     
     // OkHttp - WebSocket 通信（如需要）
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-}
-```
-
-#### 方式二：使用 AAR 文件
-
-**优点**：简单直接  
-**缺点**：需要手动添加Media3依赖
-
-```
-YourProject/
-├── app/
-│   ├── libs/
-│   │   └── wqmp3streamplayer.aar  ← 放在这里
-│   ├── build.gradle
-│   └── src/
-```
-
-在 `app/build.gradle` 中：
-
-```gradle
-android {
-    compileSdk 34
-    
-    defaultConfig {
-        minSdk 24
-        targetSdk 34
-    }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-dependencies {
-    // AAR 库
-    implementation files('libs/wqmp3streamplayer.aar')
-    
-    // Media3 库 - 必需依赖（手动添加）
-    implementation 'androidx.media3:media3-exoplayer:1.2.0'
-    implementation 'androidx.media3:media3-datasource:1.2.0'
-    implementation 'androidx.media3:media3-ui:1.2.0'
-    
-    // OkHttp - WebSocket 通信（应用层使用，如需要）
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 ```
 
@@ -554,7 +491,6 @@ import org.json.JSONObject;
 
 import cn.watchfun.mp3streamplayer.PlayerCallback;
 import cn.watchfun.mp3streamplayer.PlayerState;
-import cn.watchfun.mp3streamplayer.StreamConfig;
 import cn.watchfun.mp3streamplayer.WQMp3StreamPlayer;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -723,16 +659,10 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         
-        // 配置播放器
-        // 如果服务器发送的数据有12字节头部
-        StreamConfig config = new StreamConfig.Builder()
-                .setStartTimeId(startTimeId)
-                .setMessageId(messageId)
-                .build();
-        player.initialize(config);
-        
-        // 如果服务器发送的数据没有头部，使用：
-        // player.initialize(null);
+        // 配置播放器（使用AAR）
+        // AAR会自动检测MP3流是否包含头部信息，无需手动配置
+        // 使用5秒超时：如果5秒内没有新数据，将自动标记完成
+        player.initialize(null, 5.0f);
         
         // 启动播放器
         player.start();
