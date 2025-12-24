@@ -920,17 +920,7 @@ player.setCallback(new PlayerCallback() {
 public class AudioConfig {
     public static final String WS_URL = BuildConfig.WS_URL;
     public static final String API_KEY = BuildConfig.API_KEY;
-    
-    public static StreamConfig createWithHeaders(long startTimeId, int messageId) {
-        return new StreamConfig.Builder()
-                .setStartTimeId(startTimeId)
-                .setMessageId(messageId)
-                .build();
-    }
-    
-    public static StreamConfig createWithoutHeaders() {
-        return new StreamConfig.Builder().build();
-    }
+    public static final float TIMEOUT_SECONDS = 5.0f;
 }
 ```
 
@@ -949,10 +939,9 @@ adb logcat -s WQMp3StreamPlayer:V WebSocketDataSource:V
 **正常流程日志：**
 ```
 D/WQMp3StreamPlayer: 初始化ExoPlayer
-D/WQMp3StreamPlayer: 配置包含头部信息 - startTimeId: 1698765432, messageId: 1001
 D/WQMp3StreamPlayer: 开始播放
 D/WQMp3StreamPlayer: 播放器已启动
-V/WQMp3StreamPlayer: 移除头部后数据大小: 4096 字节 (原始: 4108 字节)
+D/WQMp3StreamPlayer: 自动检测到头部信息
 D/WQMp3StreamPlayer: 状态更新: PLAYING
 ```
 
@@ -961,8 +950,7 @@ D/WQMp3StreamPlayer: 状态更新: PLAYING
 | 错误信息 | 原因 | 解决方案 |
 |---------|------|---------|
 | "DataSource未打开，忽略数据" | 未调用 start() | 先调用 start() 再 feedData() |
-| "头部验证失败" | 配置的ID与实际不符 | 检查 startTimeId 和 messageId 是否一致 |
-| "播放错误: Source error" | 音频格式错误 | 检查是否正确移除了头部 |
+| "播放错误: Source error" | 音频格式错误 | 检查MP3数据是否正确 |
 
 ### 8.3 性能优化
 
