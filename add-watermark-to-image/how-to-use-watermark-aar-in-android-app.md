@@ -16,8 +16,6 @@
 
 ## 效果预览
 
-使用本AAR添加水印后的效果：
-
 <div align="center">
   <img src="a4c2ec47a3d01139432abada640b4d9f.jpg" alt="水印效果示例" width="50%">
 </div>
