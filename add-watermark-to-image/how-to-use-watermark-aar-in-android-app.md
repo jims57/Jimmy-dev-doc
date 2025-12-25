@@ -34,7 +34,7 @@ dependencies {
 ```
 app/src/main/assets/
 └── watermark-png/
-    └── your-watermark.png
+    └── 你的水印图片.png
 ```
 
 ### 3. 添加水印（最简化API）
@@ -51,7 +51,7 @@ executorService.execute(() -> {
     // 最简化API - 输入图像和水印都从assets加载
     WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssets(
             "your-image.jpg",           // 输入图像在assets中的路径
-            "watermark-png/your-watermark.png"  // 水印图像在assets中的路径
+            "watermark-png/你的水印图片.png"  // 水印图像在assets中的路径
     );
     
     // 处理结果
@@ -100,7 +100,7 @@ WatermarkResult addWatermarkFromAssets(
     String inputAssetPath,      // 输入图像在assets中的路径
     String watermarkAssetPath,  // 水印图像在assets中的路径
     WatermarkPosition position, // 水印位置
-    int margin,                 // 边距（像素）
+    int margin,                 // 水印距离底边的距离（像素）
     boolean isDebug             // 是否打印调试日志
 )
 ```
@@ -114,7 +114,7 @@ WatermarkResult addWatermarkBlocking(
     String watermarkImagePath,  // 水印图像的绝对路径
     String outputPath,          // 输出路径（可为null）
     WatermarkPosition position, // 水印位置
-    int margin,                 // 边距（像素）
+    int margin,                 // 水印距离底边的距离（像素）
     boolean isDebug             // 是否打印调试日志
 )
 ```
