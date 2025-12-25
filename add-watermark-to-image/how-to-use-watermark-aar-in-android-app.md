@@ -14,6 +14,12 @@
 
 > 如需了解更多关于AAR集成、为什么使用独立AAR、风格滤镜功能等详细信息，请参考：[how-to-use-wq-style-filter-in-android-app-v2.md](../style-filter/ffmpeg-based/how-to-use-wq-style-filter-in-android-app-v2.md)
 
+## 效果预览
+
+使用本AAR添加水印后的效果：
+
+![水印效果示例](a4c2ec47a3d01139432abada640b4d9f.jpg)
+
 ## 快速开始
 
 ### 1. 添加AAR依赖
