@@ -129,7 +129,7 @@ WatermarkResult addWatermarkWithScaleBlocking(
     String outputPath,
     WatermarkPosition position,
     int margin,
-    float watermarkScale,  // 缩放比例：0.5=50%, 2.0=200%
+    float watermarkScale,  // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
     boolean isDebug
 )
 ```
