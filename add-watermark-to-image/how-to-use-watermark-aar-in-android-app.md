@@ -37,7 +37,7 @@ app/src/main/assets/
     └── 水印图片.png
 ```
 
-### 3. 添加水印（最简化API）
+### 3. 添加水印（带缩放API - 推荐）
 
 ```java
 import cn.watchfun.stylefilter.WQStyleFilter;
@@ -48,10 +48,21 @@ ExecutorService executorService = Executors.newSingleThreadExecutor();
 
 // 在后台线程添加水印
 executorService.execute(() -> {
-    // 最简化API - 输入图像和水印都从assets加载
-    WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssets(
-            "your-image.jpg",           // 输入图像在assets中的路径
-            "watermark-png/水印图片.png"  // 水印图像在assets中的路径
+    // 带缩放的API - 输入图像和水印都从assets加载
+    // 水印位置可选值:
+    // WatermarkPosition.TOP_LEFT      - 左上角
+    // WatermarkPosition.TOP_RIGHT     - 右上角
+    // WatermarkPosition.BOTTOM_LEFT   - 左下角
+    // WatermarkPosition.BOTTOM_RIGHT  - 右下角
+    // WatermarkPosition.CENTER        - 居中
+    // WatermarkPosition.BOTTOM_CENTER - 底部居中（默认）
+    WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssetsWithScale(
+            "your-image.jpg",                              // 输入图像在assets中的路径
+            "watermark-png/水印图片.png",                   // 水印图像在assets中的路径
+            WQStyleFilter.WatermarkPosition.BOTTOM_CENTER, // 水印位置（底部居中）
+            100,                                           // 水印距离底边的距离（像素）
+            1.0f,                                          // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
+            false                                          // isDebug=false 不打印调试日志
     );
     
     // 处理结果
@@ -89,7 +100,21 @@ executorService.execute(() -> {
 
 ### 水印方法
 
-#### 1. 最简化API（推荐）
+#### 1. 带缩放的Assets API（推荐）
+
+```java
+// 从assets加载图像，支持水印缩放
+WatermarkResult addWatermarkFromAssetsWithScale(
+    String inputAssetPath,      // 输入图像在assets中的路径
+    String watermarkAssetPath,  // 水印图像在assets中的路径
+    WatermarkPosition position, // 水印位置
+    int margin,                 // 水印距离底边的距离（像素）
+    float watermarkScale,       // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
+    boolean isDebug             // 是否打印调试日志
+)
+```
+
+#### 2. 简化Assets API
 
 ```java
 // 使用默认位置（底部居中）和边距（100像素）
@@ -105,32 +130,32 @@ WatermarkResult addWatermarkFromAssets(
 )
 ```
 
-#### 2. 文件路径API
+#### 3. 文件路径API（带缩放）
+
+```java
+// 使用绝对文件路径，支持水印缩放
+WatermarkResult addWatermarkWithScaleBlocking(
+    String inputImagePath,      // 输入图像的绝对路径
+    String watermarkImagePath,  // 水印图像的绝对路径
+    String outputPath,          // 输出路径（可为null，自动保存为JPG格式）
+    WatermarkPosition position, // 水印位置
+    int margin,                 // 水印距离底边的距离（像素）
+    float watermarkScale,       // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
+    boolean isDebug             // 是否打印调试日志
+)
+```
+
+#### 4. 文件路径API（无缩放）
 
 ```java
 // 使用绝对文件路径
 WatermarkResult addWatermarkBlocking(
     String inputImagePath,      // 输入图像的绝对路径
     String watermarkImagePath,  // 水印图像的绝对路径
-    String outputPath,          // 输出路径（可为null）
+    String outputPath,          // 输出路径（可为null，自动保存为JPG格式）
     WatermarkPosition position, // 水印位置
     int margin,                 // 水印距离底边的距离（像素）
     boolean isDebug             // 是否打印调试日志
-)
-```
-
-#### 3. 带缩放的水印
-
-```java
-// 可以缩放水印大小
-WatermarkResult addWatermarkWithScaleBlocking(
-    String inputImagePath,
-    String watermarkImagePath,
-    String outputPath,
-    WatermarkPosition position,
-    int margin,
-    float watermarkScale,  // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
-    boolean isDebug
 )
 ```
 
@@ -155,13 +180,14 @@ public class WatermarkActivity extends AppCompatActivity {
     // 添加水印按钮点击事件
     private void addWatermark() {
         executorService.execute(() -> {
-            // 使用简化API添加水印
-            WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssets(
-                    "sample-image.jpg",
-                    "watermark-png/水印图片.png",
-                    WQStyleFilter.WatermarkPosition.BOTTOM_CENTER,
-                    100,    // 距离底边100像素
-                    false   // 不打印调试日志
+            // 使用带缩放的API添加水印（推荐）
+            WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssetsWithScale(
+                    "sample-image.jpg",                              // 输入图像
+                    "watermark-png/水印图片.png",                     // 水印图像
+                    WQStyleFilter.WatermarkPosition.BOTTOM_CENTER,   // 水印位置
+                    100,                                             // 距离底边100像素
+                    1.0f,                                            // 水印缩放比例（1.0=原始大小）
+                    false                                            // 不打印调试日志
             );
             
             runOnUiThread(() -> {
@@ -198,8 +224,9 @@ public class WatermarkActivity extends AppCompatActivity {
 
 1. **后台线程**：水印处理是耗时操作，必须在后台线程执行
 2. **水印格式**：推荐使用PNG格式水印，支持透明背景
-3. **内存管理**：处理完成后，AAR会自动清理临时文件
-4. **权限**：如需保存到Documents文件夹，需要存储权限
+3. **输出格式**：无论输入图像是PNG还是JPG，输出结果都会自动转换为JPG格式以节省磁盘空间
+4. **内存管理**：处理完成后，AAR会自动清理临时文件
+5. **权限**：如需保存到Documents文件夹，需要存储权限
 
 ## 技术支持
 
