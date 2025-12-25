@@ -34,7 +34,7 @@ dependencies {
 ```
 app/src/main/assets/
 └── watermark-png/
-    └── 你的水印图片.png
+    └── 水印图片.png
 ```
 
 ### 3. 添加水印（最简化API）
@@ -51,7 +51,7 @@ executorService.execute(() -> {
     // 最简化API - 输入图像和水印都从assets加载
     WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssets(
             "your-image.jpg",           // 输入图像在assets中的路径
-            "watermark-png/你的水印图片.png"  // 水印图像在assets中的路径
+            "watermark-png/水印图片.png"  // 水印图像在assets中的路径
     );
     
     // 处理结果
@@ -158,7 +158,7 @@ public class WatermarkActivity extends AppCompatActivity {
             // 使用简化API添加水印
             WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromAssets(
                     "sample-image.jpg",
-                    "watermark-png/my-watermark.png",
+                    "watermark-png/水印图片.png",
                     WQStyleFilter.WatermarkPosition.BOTTOM_CENTER,
                     100,    // 距离底边100像素
                     false   // 不打印调试日志
