@@ -4,13 +4,13 @@
 
 *最后更新：2026年1月4日*
 
-*版本：v1.8.1*
+*版本：v1.8.2*
 
 本指南介绍如何在Android项目中使用WQStyleFilter AAR库的水印功能。
 
 **本版本包含两个AAR文件：**
 - `wq-ffmpeg-kit-1.0.0.aar` (33MB) - 基础库
-- `wq-ffmpeg-style-filter-1.8.1.aar` (20KB) - 功能SDK（包含水印和风格滤镜）
+- `wq-ffmpeg-style-filter-1.8.2.aar` (20KB) - 功能SDK（包含水印和风格滤镜）
 
 > 如需了解更多关于AAR集成、为什么使用独立AAR、风格滤镜功能等详细信息，请参考：[how-to-use-wq-style-filter-in-android-app-v2.md](../style-filter/ffmpeg-based/how-to-use-wq-style-filter-in-android-app-v2.md)
 
@@ -28,7 +28,7 @@
 // app/build.gradle.kts
 dependencies {
     implementation(files("libs/wq-ffmpeg-kit-1.0.0.aar"))
-    implementation(files("libs/wq-ffmpeg-style-filter-1.8.1.aar"))
+    implementation(files("libs/wq-ffmpeg-style-filter-1.8.2.aar"))
     implementation("com.arthenica:smart-exception-java:0.2.1")
 }
 ```
@@ -142,6 +142,8 @@ WatermarkResult addWatermarkFromAssets(
 // 输入图像使用文件路径，水印从assets加载
 // 适用于用户拍摄的照片（存储在文件系统中）需要添加水印的场景
 // AAR内部自动处理水印资源的复制和清理
+
+// 方式1: 不指定输出路径（返回Bitmap）
 WatermarkResult addWatermarkFromFileWithScale(
     String inputImagePath,      // 输入图像的绝对路径（如眼镜相机拍摄的照片）
     String watermarkAssetPath,  // 水印图像在assets中的路径
@@ -150,22 +152,41 @@ WatermarkResult addWatermarkFromFileWithScale(
     float watermarkScale,       // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
     boolean isDebug             // 是否打印调试日志
 )
+
+// 方式2: 指定输出路径（推荐，直接保存到指定路径）
+WatermarkResult addWatermarkFromFileWithScale(
+    String inputImagePath,      // 输入图像的绝对路径（如眼镜相机拍摄的照片）
+    String watermarkAssetPath,  // 水印图像在assets中的路径
+    String outputPath,          // 输出图像路径（水印后的图片保存路径）
+    WatermarkPosition position, // 水印位置
+    int margin,                 // 水印距离底边的距离（像素）
+    float watermarkScale,       // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
+    boolean isDebug             // 是否打印调试日志
+)
 ```
 
-**使用示例（眼镜相机拍摄的照片）：**
+**使用示例（眼镜相机拍摄的照片，带输出路径）：**
 
 ```java
 // 眼镜相机拍摄的照片路径
 String photoPath = "/data/data/cn.watchfun.android_use_cpp_demo1/files/media/DH-251128-174810236-imag0002.jpg";
+// 水印后的图片保存路径
+String outputPath = "/data/data/cn.watchfun.android_use_cpp_demo1/files/media/DH-251128-174810236-imag0002_watermarked.jpg";
 
 WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromFileWithScale(
     photoPath,                        // 输入图像文件路径（眼镜相机拍摄的照片路径）
     "watermark-png/水印图片.png",      // 水印图像在assets中的路径
+    outputPath,                       // 输出图像路径（水印后的图片保存路径）
     WQStyleFilter.WatermarkPosition.BOTTOM_CENTER,
     100,
     1.0f,
     true
 );
+
+if (result.getSuccess()) {
+    // 水印图片已保存到 outputPath，可以直接使用该路径
+    Log.d(TAG, "水印图片已保存到: " + outputPath);
+}
 ```
 
 #### 4. 文件路径API（带缩放，输入和水印都使用文件路径）
