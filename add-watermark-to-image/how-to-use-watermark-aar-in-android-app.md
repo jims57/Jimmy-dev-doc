@@ -2,15 +2,15 @@
 
 *作者：Jimmy Gan*
 
-*最后更新：2025年12月25日*
+*最后更新：2026年1月4日*
 
-*版本：v1.8.0*
+*版本：v1.8.1*
 
 本指南介绍如何在Android项目中使用WQStyleFilter AAR库的水印功能。
 
 **本版本包含两个AAR文件：**
 - `wq-ffmpeg-kit-1.0.0.aar` (33MB) - 基础库
-- `wq-ffmpeg-style-filter-1.8.0.aar` (20KB) - 功能SDK（包含水印和风格滤镜）
+- `wq-ffmpeg-style-filter-1.8.1.aar` (20KB) - 功能SDK（包含水印和风格滤镜）
 
 > 如需了解更多关于AAR集成、为什么使用独立AAR、风格滤镜功能等详细信息，请参考：[how-to-use-wq-style-filter-in-android-app-v2.md](../style-filter/ffmpeg-based/how-to-use-wq-style-filter-in-android-app-v2.md)
 
@@ -28,7 +28,7 @@
 // app/build.gradle.kts
 dependencies {
     implementation(files("libs/wq-ffmpeg-kit-1.0.0.aar"))
-    implementation(files("libs/wq-ffmpeg-style-filter-1.8.0.aar"))
+    implementation(files("libs/wq-ffmpeg-style-filter-1.8.1.aar"))
     implementation("com.arthenica:smart-exception-java:0.2.1")
 }
 ```
@@ -136,7 +136,39 @@ WatermarkResult addWatermarkFromAssets(
 )
 ```
 
-#### 3. 文件路径API（带缩放）
+#### 3. 文件路径+Assets水印API（推荐用于眼镜相机拍摄的照片）
+
+```java
+// 输入图像使用文件路径，水印从assets加载
+// 适用于用户拍摄的照片（存储在文件系统中）需要添加水印的场景
+// AAR内部自动处理水印资源的复制和清理
+WatermarkResult addWatermarkFromFileWithScale(
+    String inputImagePath,      // 输入图像的绝对路径（如眼镜相机拍摄的照片）
+    String watermarkAssetPath,  // 水印图像在assets中的路径
+    WatermarkPosition position, // 水印位置
+    int margin,                 // 水印距离底边的距离（像素）
+    float watermarkScale,       // 水印缩放比例（0.5=50%, 1.0=100%原始大小, 2.0=200%）
+    boolean isDebug             // 是否打印调试日志
+)
+```
+
+**使用示例（眼镜相机拍摄的照片）：**
+
+```java
+// 眼镜相机拍摄的照片路径
+String photoPath = "/data/data/cn.watchfun.android_use_cpp_demo1/files/media/DH-251128-174810236-imag0002.jpg";
+
+WQStyleFilter.WatermarkResult result = styleFilter.addWatermarkFromFileWithScale(
+    photoPath,                        // 输入图像文件路径（眼镜相机拍摄的照片路径）
+    "watermark-png/水印图片.png",      // 水印图像在assets中的路径
+    WQStyleFilter.WatermarkPosition.BOTTOM_CENTER,
+    100,
+    1.0f,
+    true
+);
+```
+
+#### 4. 文件路径API（带缩放，输入和水印都使用文件路径）
 
 ```java
 // 使用绝对文件路径，支持水印缩放
@@ -151,7 +183,7 @@ WatermarkResult addWatermarkWithScaleBlocking(
 )
 ```
 
-#### 4. 文件路径API（无缩放）
+#### 5. 文件路径API（无缩放）
 
 ```java
 // 使用绝对文件路径
