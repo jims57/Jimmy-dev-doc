@@ -131,7 +131,7 @@ self.player.isDebug = NO; // 生产环境关闭日志，调试时设为YES
 | `mute` | 静音（v1.2.0新增） |
 | `restoreVolume` | 恢复音量（v1.2.0新增） |
 | `stopImmediatelyAndReset` | 立即停止并重置 |
-| ~~`notifyDataComplete`~~ | ⚠️ v1.2.0已废弃，自动检测完成 |
+| ~~`notifyDataComplete`~~ |  v1.2.0已废弃，自动检测完成 |
 
 ### 3.2 属性
 
