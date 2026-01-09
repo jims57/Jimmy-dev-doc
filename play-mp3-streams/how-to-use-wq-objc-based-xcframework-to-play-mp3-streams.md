@@ -1,8 +1,8 @@
 # WQMp3StreamPlayer XCFramework 使用指南 (iOS)
 
 > 作者：Jimmy Gan  
-> 日期：2025-11-17  
-> 版本：v1.3.0
+> 日期：2026-01-09  
+> 版本：v1.3.1
 
 ## 目录
 
@@ -61,6 +61,22 @@ XCFramework 会自动检测播放完成，无需手动调用 `notifyDataComplete
 - **按钮状态管理**：每次播放自动重置按钮状态
 - **无缝切换**：停止后立即可以开始新的播放
 
+### 1.7 调试模式（v1.3.1新特性）
+
+支持开关调试日志，生产环境可关闭日志输出：
+
+- **isDebug属性**：设置为YES打印详细日志，设置为NO不打印任何日志
+- **默认关闭**：默认isDebug=NO，生产环境无日志输出
+- **调试友好**：开发调试时设置isDebug=YES查看详细日志
+
+### 1.8 播放器复用（v1.3.1最佳实践）
+
+**重要**：播放器实例应该复用，不要每次播放都创建新实例：
+
+- **创建一次**：在viewDidLoad或init中创建播放器实例
+- **复用播放**：每次播放前调用`stopImmediatelyAndReset`重置状态
+- **避免崩溃**：每次创建新实例可能导致"cannot form weak reference"崩溃
+
 ---
 
 ## 2. 快速开始
@@ -77,9 +93,10 @@ XCFramework 会自动检测播放完成，无需手动调用 `notifyDataComplete
 ```objc
 #import <WQMp3StreamPlayer/WQMp3StreamPlayer.h>
 
-// 1. 创建播放器
+// 1. 创建播放器（只创建一次，复用）
 self.player = [[WQMp3StreamPlayer alloc] init];
 self.player.callback = self;
+self.player.isDebug = NO; // 生产环境关闭日志，调试时设为YES
 
 // 2. 初始化（自动检测头部）
 [self.player initializeWithConfig:nil timeout:15.0];
@@ -116,7 +133,16 @@ self.player.callback = self;
 | `stopImmediatelyAndReset` | 立即停止并重置 |
 | ~~`notifyDataComplete`~~ | ⚠️ v1.2.0已废弃，自动检测完成 |
 
-### 3.2 回调协议
+### 3.2 属性
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `callback` | id<WQPlayerCallback> | 播放器回调代理 |
+| `currentState` | WQPlayerState | 当前播放器状态（只读） |
+| `isPlaying` | BOOL | 是否正在播放（只读） |
+| `isDebug` | BOOL | 是否开启调试日志（v1.3.1新增，默认NO） |
+
+### 3.3 回调协议
 
 ```objc
 @protocol WQPlayerCallback <NSObject>
@@ -126,7 +152,7 @@ self.player.callback = self;
 @end
 ```
 
-### 3.3 播放器状态
+### 3.4 播放器状态
 
 | 状态 | 说明 |
 |------|------|
@@ -168,9 +194,10 @@ self.player.callback = self;
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 初始化播放器
+    // 初始化播放器（只创建一次，复用）
     self.player = [[WQMp3StreamPlayer alloc] init];
     self.player.callback = self;
+    self.player.isDebug = YES; // Demo项目开启调试日志，生产环境设为NO
 }
 
 // 连接WebSocket
@@ -342,13 +369,17 @@ A: iOS 13.0 及以上版本。
 
 ## 6. 最佳实践
 
-### 6.1 推荐用法（v1.2.0）
+### 6.1 推荐用法（v1.3.1）
 
 ```objc
-// 1. 初始化（自动检测头部）
-[self.player initializeWithConfig:nil timeout:15.0];
+// 1. 创建播放器（只在viewDidLoad中创建一次）
+self.player = [[WQMp3StreamPlayer alloc] init];
+self.player.callback = self;
+self.player.isDebug = NO; // 生产环境关闭日志
 
-// 2. 启动
+// 2. 每次播放前重置（复用播放器）
+[self.player stopImmediatelyAndReset];
+[self.player initializeWithConfig:nil timeout:15.0];
 [self.player start];
 
 // 3. 喂数据（自动检测空流和超时）
@@ -362,7 +393,33 @@ A: iOS 13.0 及以上版本。
 [self.player restoreVolume];  // 恢复
 ```
 
-### 6.2 错误处理
+### 6.2 播放器复用（重要）
+
+```objc
+// 错误用法：每次播放都创建新实例（可能导致崩溃）
+- (void)playAudio {
+    self.player = [[WQMp3StreamPlayer alloc] init]; // 不要这样做！
+    [self.player start];
+}
+
+// 正确用法：复用播放器实例
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // 只创建一次
+    self.player = [[WQMp3StreamPlayer alloc] init];
+    self.player.callback = self;
+    self.player.isDebug = NO;
+}
+
+- (void)playAudio {
+    // 复用播放器，只重置状态
+    [self.player stopImmediatelyAndReset];
+    [self.player initializeWithConfig:nil timeout:15.0];
+    [self.player start];
+}
+```
+
+### 6.3 错误处理
 
 ```objc
 - (void)onError:(NSString *)errorMessage error:(NSError *)error {
@@ -372,7 +429,7 @@ A: iOS 13.0 及以上版本。
 }
 ```
 
-### 6.3 资源管理
+### 6.4 资源管理
 
 ```objc
 - (void)dealloc {
@@ -380,7 +437,7 @@ A: iOS 13.0 及以上版本。
 }
 ```
 
-### 6.4 完成回调时机保证（v1.2.0）
+### 6.5 完成回调时机保证（v1.2.0）
 
 ```objc
 - (void)onPlaybackCompleted {
